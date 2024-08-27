@@ -2,7 +2,6 @@ package main
 
 import (
 	"log"
-	"strings"
 
 	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/bubbles/textinput"
@@ -46,6 +45,7 @@ func newModel() model {
 	list := list.New(items, NewEntryDelegate(), 0, 0)
 	list.Title = "Results"
 	list.SetFilteringEnabled(false)
+	list.SetShowHelp(false)
 	return model{
 		search:  search,
 		results: list,
@@ -64,7 +64,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 		case "enter":
 			m.results.SetItems(Collect(m.search.Value()))
-			log.Printf("list items: %s", m.results.Items())
+			m.search.Blur()
 		case "ctrl+n", "down", "j":
 			if m.selected < len(m.results.Items()) {
 				m.selected++
@@ -77,7 +77,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 	if windowSizeMsg, ok := msg.(tea.WindowSizeMsg); ok {
 		h, v := style.GetFrameSize()
-		m.results.SetSize(windowSizeMsg.Width-h, windowSizeMsg.Height-v)
+		m.results.SetSize(windowSizeMsg.Width-h, windowSizeMsg.Height-v-3)
 	}
 
 	var res_cmd tea.Cmd
@@ -90,13 +90,15 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m model) View() string {
-	var s strings.Builder
-	s.WriteString(m.search.View())
-	s.WriteString(m.results.View())
 	if m.err != nil {
-		s.WriteString("\n\nError: " + m.err.Error())
+		return "\n\nError: " + m.err.Error()
 	}
-	return style.Render(s.String())
+
+	return style.Render(
+		lipgloss.JoinVertical(0,
+			m.search.View(),
+			"\n",
+			m.results.View()))
 }
 
 func main() {
