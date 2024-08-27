@@ -3,6 +3,8 @@ package main
 import (
 	"log"
 
+	"github.com/charmbracelet/bubbles/help"
+	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
@@ -31,6 +33,8 @@ func (e RecollEntry) FilterValue() string { return "" + e.Url }
 type model struct {
 	search   textinput.Model
 	results  list.Model
+	keys     KeyMap
+	help     help.Model
 	selected int
 	err      error
 }
@@ -46,9 +50,13 @@ func newModel() model {
 	list.Title = "Results"
 	list.SetFilteringEnabled(false)
 	list.SetShowHelp(false)
+	keys := NewDefaultKeyMap()
+	help := help.New()
 	return model{
 		search:  search,
 		results: list,
+		keys:    keys,
+		help:    help,
 	}
 }
 
@@ -59,20 +67,16 @@ func (m model) Init() tea.Cmd {
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 	if keyMsg, ok := msg.(tea.KeyMsg); ok {
-		switch keyMsg.String() {
-		case "ctrl+c", "q":
-			return m, tea.Quit
-		case "enter":
+		switch {
+		case key.Matches(keyMsg, m.keys.FocusSearch):
+			m.search.Focus()
+		case key.Matches(keyMsg, m.keys.ExecuteSearch):
 			m.results.SetItems(Collect(m.search.Value()))
 			m.search.Blur()
-		case "ctrl+n", "down", "j":
-			if m.selected < len(m.results.Items()) {
-				m.selected++
-			}
-		case "ctrl+p", "up", "k":
-			if m.selected > 0 {
-				m.selected--
-			}
+		case key.Matches(keyMsg, m.keys.Quit):
+			return m, tea.Quit
+		case key.Matches(keyMsg, m.keys.Help):
+			m.help.ShowAll = !m.help.ShowAll
 		}
 	}
 	if windowSizeMsg, ok := msg.(tea.WindowSizeMsg); ok {
@@ -80,10 +84,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.results.SetSize(windowSizeMsg.Width-h, windowSizeMsg.Height-v-3)
 	}
 
-	var res_cmd tea.Cmd
+	var res_cmd, sea_cmd tea.Cmd
 	m.results, res_cmd = m.results.Update(msg)
 	cmds = append(cmds, res_cmd)
-	var sea_cmd tea.Cmd
 	m.search, sea_cmd = m.search.Update(msg)
 	cmds = append(cmds, sea_cmd)
 	return m, tea.Batch(cmds...)
@@ -98,7 +101,9 @@ func (m model) View() string {
 		lipgloss.JoinVertical(0,
 			m.search.View(),
 			"\n",
-			m.results.View()))
+			m.results.View(),
+			m.help.View(m.keys),
+		))
 }
 
 func main() {
