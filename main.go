@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"strings"
 
 	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/key"
@@ -31,18 +32,18 @@ func (e RecollEntry) Description() string { return " " + e.Author }
 func (e RecollEntry) FilterValue() string { return "" + e.Url }
 
 type model struct {
-	search   textinput.Model
-	results  list.Model
-	keys     KeyMap
-	help     help.Model
-	selected int
-	err      error
+	search  textinput.Model
+	results list.Model
+	keys    KeyMap
+	help    help.Model
+	err     error
 }
 
 func newModel() model {
 	var items []list.Item
 	search := textinput.New()
-	search.Placeholder = " search…"
+	search.Placeholder = "search…"
+	search.Prompt = " "
 	search.Focus()
 	search.CharLimit = 200
 	search.Width = 20
@@ -71,24 +72,37 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case key.Matches(keyMsg, m.keys.FocusSearch):
 			m.search.Focus()
 		case key.Matches(keyMsg, m.keys.ExecuteSearch):
-			m.results.SetItems(Collect(m.search.Value()))
+			if !(m.search.Value() == "") {
+				m.results.SetItems(Collect(m.search.Value()))
+			}
 			m.search.Blur()
 		case key.Matches(keyMsg, m.keys.Quit):
 			return m, tea.Quit
 		case key.Matches(keyMsg, m.keys.Help):
+			prevHeight := strings.Count(m.help.View(m.keys), "\n")
 			m.help.ShowAll = !m.help.ShowAll
+			newHeight := strings.Count(m.help.View(m.keys), "\n")
+			m.results.SetSize(
+				m.results.Width(),
+				m.results.Height()-(newHeight-prevHeight),
+			)
 		}
 	}
 	if windowSizeMsg, ok := msg.(tea.WindowSizeMsg); ok {
 		h, v := style.GetFrameSize()
-		m.results.SetSize(windowSizeMsg.Width-h, windowSizeMsg.Height-v-3)
+		m.results.SetSize(
+			windowSizeMsg.Width-h,
+			windowSizeMsg.Height-v-5,
+		)
 	}
 
-	var res_cmd, sea_cmd tea.Cmd
+	var res_cmd, sea_cmd, hel_cmd tea.Cmd
 	m.results, res_cmd = m.results.Update(msg)
 	cmds = append(cmds, res_cmd)
 	m.search, sea_cmd = m.search.Update(msg)
 	cmds = append(cmds, sea_cmd)
+	m.help, hel_cmd = m.help.Update(msg)
+	cmds = append(cmds, hel_cmd)
 	return m, tea.Batch(cmds...)
 }
 
