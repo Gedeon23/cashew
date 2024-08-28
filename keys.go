@@ -7,10 +7,11 @@ import (
 type KeyMap struct {
 	Quit          key.Binding
 	Help          key.Binding
-	FocusSearch   key.Binding
 	ExecuteSearch key.Binding
 	NextEntry     key.Binding
 	PrevEntry     key.Binding
+	FocusNext     key.Binding
+	FocusSearch   key.Binding
 }
 
 func (k KeyMap) ShortHelp() []key.Binding {
@@ -20,7 +21,7 @@ func (k KeyMap) ShortHelp() []key.Binding {
 func (k KeyMap) FullHelp() [][]key.Binding {
 	return [][]key.Binding{
 		{k.FocusSearch, k.ExecuteSearch, k.NextEntry, k.PrevEntry},
-		{k.Quit, k.Help},
+		{k.FocusNext, k.Quit, k.Help},
 	}
 }
 
@@ -28,7 +29,7 @@ func NewDefaultKeyMap() KeyMap {
 	return KeyMap{
 		Quit: key.NewBinding(
 			key.WithKeys("q", "esc"),
-			key.WithHelp("q", "quit"),
+			key.WithHelp("q/esc", "quit"),
 		),
 		Help: key.NewBinding(
 			key.WithKeys("?", "h"),
@@ -49,6 +50,10 @@ func NewDefaultKeyMap() KeyMap {
 		PrevEntry: key.NewBinding(
 			key.WithKeys("k", "ctrl+p"),
 			key.WithHelp("k", "previous"),
+		),
+		FocusNext: key.NewBinding(
+			key.WithKeys("tab"),
+			key.WithHelp("TAB", "focus next"),
 		),
 	}
 }

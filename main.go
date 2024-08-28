@@ -79,11 +79,17 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch {
 		case key.Matches(msg, m.keys.FocusSearch):
 			m.search.Focus()
+			m.focus = FocusSearch
+		case key.Matches(msg, m.keys.FocusNext):
+			m.focus = (m.focus + 1) % 3
 		case key.Matches(msg, m.keys.ExecuteSearch):
+			// TODO Refactor unto Cmd probably?-------------------+
 			if !(m.search.Value() == "") {
 				m.results.SetItems(Collect(m.search.Value()))
 			}
+			//----------------------------------------------------+
 			m.search.Blur()
+			m.focus = FocusResults
 		case key.Matches(msg, m.keys.Quit):
 			return m, tea.Quit
 		case key.Matches(msg, m.keys.Help):
@@ -94,6 +100,15 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.results.Width(),
 				m.results.Height()-(newHeight-prevHeight),
 			)
+		default:
+			var cmd tea.Cmd
+			switch m.focus {
+			case FocusSearch:
+				m.search, cmd = m.search.Update(msg)
+			case FocusResults:
+				m.results, cmd = m.results.Update(msg)
+			}
+			cmds = append(cmds, cmd)
 		}
 
 	case tea.WindowSizeMsg:
@@ -104,13 +119,13 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		)
 	}
 
-	var res_cmd, sea_cmd, hel_cmd tea.Cmd
-	m.results, res_cmd = m.results.Update(msg)
-	cmds = append(cmds, res_cmd)
-	m.search, sea_cmd = m.search.Update(msg)
-	cmds = append(cmds, sea_cmd)
-	m.help, hel_cmd = m.help.Update(msg)
-	cmds = append(cmds, hel_cmd)
+	// var res_cmd, sea_cmd, hel_cmd tea.Cmd
+	// m.results, res_cmd = m.results.Update(msg)
+	// cmds = append(cmds, res_cmd)
+	// m.search, sea_cmd = m.search.Update(msg)
+	// cmds = append(cmds, sea_cmd)
+	// m.help, hel_cmd = m.help.Update(msg)
+	// cmds = append(cmds, hel_cmd)
 	return m, tea.Batch(cmds...)
 }
 
