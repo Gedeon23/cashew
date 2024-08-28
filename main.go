@@ -31,11 +31,18 @@ func (e RecollEntry) Title() string {
 func (e RecollEntry) Description() string { return " " + e.Author }
 func (e RecollEntry) FilterValue() string { return "" + e.Url }
 
+const (
+	FocusSearch = iota
+	FocusResults
+	FocusDetail
+)
+
 type model struct {
 	search  textinput.Model
 	results list.Model
 	keys    KeyMap
 	help    help.Model
+	focus   int
 	err     error
 }
 
@@ -67,18 +74,19 @@ func (m model) Init() tea.Cmd {
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
-	if keyMsg, ok := msg.(tea.KeyMsg); ok {
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
 		switch {
-		case key.Matches(keyMsg, m.keys.FocusSearch):
+		case key.Matches(msg, m.keys.FocusSearch):
 			m.search.Focus()
-		case key.Matches(keyMsg, m.keys.ExecuteSearch):
+		case key.Matches(msg, m.keys.ExecuteSearch):
 			if !(m.search.Value() == "") {
 				m.results.SetItems(Collect(m.search.Value()))
 			}
 			m.search.Blur()
-		case key.Matches(keyMsg, m.keys.Quit):
+		case key.Matches(msg, m.keys.Quit):
 			return m, tea.Quit
-		case key.Matches(keyMsg, m.keys.Help):
+		case key.Matches(msg, m.keys.Help):
 			prevHeight := strings.Count(m.help.View(m.keys), "\n")
 			m.help.ShowAll = !m.help.ShowAll
 			newHeight := strings.Count(m.help.View(m.keys), "\n")
@@ -87,12 +95,12 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.results.Height()-(newHeight-prevHeight),
 			)
 		}
-	}
-	if windowSizeMsg, ok := msg.(tea.WindowSizeMsg); ok {
+
+	case tea.WindowSizeMsg:
 		h, v := style.GetFrameSize()
 		m.results.SetSize(
-			windowSizeMsg.Width-h,
-			windowSizeMsg.Height-v-5,
+			msg.Width-h,
+			msg.Height-v-5,
 		)
 	}
 
