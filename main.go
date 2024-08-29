@@ -68,6 +68,28 @@ func newModel() model {
 	}
 }
 
+func (m *model) SetFocus(Focus int) {
+	if m.focus == FocusSearch && Focus != FocusSearch {
+		m.search.Blur()
+	}
+	m.focus = Focus
+	m.keys.Focus = Focus
+	if Focus == FocusSearch {
+		m.search.Focus()
+	}
+}
+
+func (m *model) NextFocus() {
+	if m.focus == FocusSearch {
+		m.search.Blur()
+	}
+	m.focus = (m.focus + 1) % 3
+	m.keys.Focus = m.focus
+	if m.focus == FocusSearch {
+		m.search.Focus()
+	}
+}
+
 func (m model) Init() tea.Cmd {
 	return nil
 }
@@ -79,23 +101,21 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch {
 		case key.Matches(msg, m.keys.FocusSearch):
 			if !(m.focus == FocusSearch) {
-				m.search.Focus()
-				m.focus = FocusSearch
+				m.SetFocus(FocusSearch)
 			} else {
 				var cmd tea.Cmd
 				m.search, cmd = m.search.Update(msg)
 				cmds = append(cmds, cmd)
 			}
 		case key.Matches(msg, m.keys.FocusNext):
-			m.focus = (m.focus + 1) % 3
+			m.NextFocus()
 		case key.Matches(msg, m.keys.ExecuteSearch):
 			// TODO Refactor unto Cmd probably?-------------------+
 			if !(m.search.Value() == "") {
 				m.results.SetItems(Collect(m.search.Value()))
 			}
 			//----------------------------------------------------+
-			m.search.Blur()
-			m.focus = FocusResults
+			m.SetFocus(FocusResults)
 		case key.Matches(msg, m.keys.Quit):
 			if !(m.focus == FocusSearch) || msg.String() == "esc" {
 				return m, tea.Quit
