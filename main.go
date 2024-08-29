@@ -78,8 +78,14 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch {
 		case key.Matches(msg, m.keys.FocusSearch):
-			m.search.Focus()
-			m.focus = FocusSearch
+			if !(m.focus == FocusSearch) {
+				m.search.Focus()
+				m.focus = FocusSearch
+			} else {
+				var cmd tea.Cmd
+				m.search, cmd = m.search.Update(msg)
+				cmds = append(cmds, cmd)
+			}
 		case key.Matches(msg, m.keys.FocusNext):
 			m.focus = (m.focus + 1) % 3
 		case key.Matches(msg, m.keys.ExecuteSearch):
@@ -91,15 +97,28 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.search.Blur()
 			m.focus = FocusResults
 		case key.Matches(msg, m.keys.Quit):
-			return m, tea.Quit
+			if !(m.focus == FocusSearch) || msg.String() == "esc" {
+				return m, tea.Quit
+			} else {
+				var cmd tea.Cmd
+				m.search, cmd = m.search.Update(msg)
+				cmds = append(cmds, cmd)
+			}
 		case key.Matches(msg, m.keys.Help):
-			prevHeight := strings.Count(m.help.View(m.keys), "\n")
-			m.help.ShowAll = !m.help.ShowAll
-			newHeight := strings.Count(m.help.View(m.keys), "\n")
-			m.results.SetSize(
-				m.results.Width(),
-				m.results.Height()-(newHeight-prevHeight),
-			)
+			if !(m.focus == FocusSearch) || msg.String() == "?" {
+				prevHeight := strings.Count(m.help.View(m.keys), "\n")
+				m.help.ShowAll = !m.help.ShowAll
+				newHeight := strings.Count(m.help.View(m.keys), "\n")
+				m.results.SetSize(
+					m.results.Width(),
+					m.results.Height()-(newHeight-prevHeight),
+				)
+			} else {
+				// TODO refactor into function
+				var cmd tea.Cmd
+				m.search, cmd = m.search.Update(msg)
+				cmds = append(cmds, cmd)
+			}
 		default:
 			var cmd tea.Cmd
 			switch m.focus {
