@@ -1,7 +1,40 @@
 # Cashew
-So far this is just planned to be a terminal UI for [recoll](recoll.org).
-It might eventually go beyond that as this is meant to solve my problems with managing [typst](typst.app) notes and PDF resources.
 
+**Cashew** (name not final) is a terminal user interface for [recoll](recoll.org).
+The goal of this project is to offer a keyboard driven UI for recoll and integrate well into workflows centered around the terminal.
+
+
+## Current Features
+
+- Search recoll index
+- Display of Title (file name if no title is found in metadata) and Author
+- easy keyboard driven navigation
+
+## Planned Features
+
+- Detail View for each entry
+- Surrounding Directory View
+- easily open the entry in your preferred pdf viewer
+- easily open possible source files (latex, typst) in your editor 
+
+
+## Installation
+
+Assuming you have Go installed on your system, the installation process is rather straight forward.
+Just clone this repo:
+```sh
+git clone https://github.com/Gedeon23/cashew.git  
+```
+
+`cd` into the directory:
+```
+cd cashew
+```
+
+build the binary:
+```
+go build .
+```
 
 ---
 
