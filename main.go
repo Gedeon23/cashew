@@ -40,7 +40,7 @@ const (
 type model struct {
 	search  textinput.Model
 	results list.Model
-	keys    KeyMap
+	keys    AdaptiveKeyMap
 	help    help.Model
 	focus   int
 	err     error
@@ -58,7 +58,7 @@ func newModel() model {
 	list.Title = "Results"
 	list.SetFilteringEnabled(false)
 	list.SetShowHelp(false)
-	keys := NewDefaultKeyMap()
+	keys := NewAdaptiveKeyMap()
 	help := help.New()
 	return model{
 		search:  search,
@@ -66,6 +66,17 @@ func newModel() model {
 		keys:    keys,
 		help:    help,
 	}
+}
+
+func (m model) SetFocus(focus int) {
+	m.focus = focus
+	m.keys.Focus = focus
+}
+
+func (m model) NextFocus() int {
+	m.focus = (m.focus + 1) % 3
+	m.keys.Focus = m.focus
+	return m.focus
 }
 
 func (m model) Init() tea.Cmd {
@@ -77,22 +88,21 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch {
-		case key.Matches(msg, m.keys.FocusSearch):
-			m.search.Focus()
-			m.focus = FocusSearch
-		case key.Matches(msg, m.keys.FocusNext):
-			m.focus = (m.focus + 1) % 3
-		case key.Matches(msg, m.keys.ExecuteSearch):
+		case key.Matches(msg, m.keys.Global.FocusSearch):
+			m.SetFocus(FocusSearch)
+		case key.Matches(msg, m.keys.Global.FocusNext):
+			m.NextFocus()
+		case key.Matches(msg, m.keys.Search.ExecuteSearch):
 			// TODO Refactor unto Cmd probably?-------------------+
 			if !(m.search.Value() == "") {
 				m.results.SetItems(Collect(m.search.Value()))
 			}
 			//----------------------------------------------------+
 			m.search.Blur()
-			m.focus = FocusResults
-		case key.Matches(msg, m.keys.Quit):
+			m.SetFocus(FocusResults)
+		case key.Matches(msg, m.keys.Global.Quit):
 			return m, tea.Quit
-		case key.Matches(msg, m.keys.Help):
+		case key.Matches(msg, m.keys.Global.Help):
 			prevHeight := strings.Count(m.help.View(m.keys), "\n")
 			m.help.ShowAll = !m.help.ShowAll
 			newHeight := strings.Count(m.help.View(m.keys), "\n")
