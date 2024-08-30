@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/Gedeon23/cashew/details"
 	"log"
 	"strings"
 
@@ -14,23 +15,6 @@ import (
 
 var style = lipgloss.NewStyle().Margin(1, 2)
 
-type RecollEntry struct {
-	Author   string
-	DocTitle string
-	File     string
-	Url      string
-}
-
-func (e RecollEntry) Title() string {
-	var icon string = " "
-	if e.File[len(e.File)-3:] == "pdf" {
-		icon = " "
-	}
-	return icon + e.DocTitle
-}
-func (e RecollEntry) Description() string { return " " + e.Author }
-func (e RecollEntry) FilterValue() string { return "" + e.Url }
-
 const (
 	FocusSearch = iota
 	FocusResults
@@ -43,6 +27,7 @@ type model struct {
 	keys    KeyMap
 	help    help.Model
 	focus   int
+	details details.Model
 	err     error
 }
 
@@ -60,11 +45,13 @@ func newModel() model {
 	list.SetShowHelp(false)
 	keys := NewDefaultKeyMap()
 	help := help.New()
+	details := details.New("", "", "", "")
 	return model{
 		search:  search,
 		results: list,
 		keys:    keys,
 		help:    help,
+		details: details,
 	}
 }
 
@@ -88,6 +75,14 @@ func (m *model) NextFocus() {
 	if m.focus == FocusSearch {
 		m.search.Focus()
 	}
+}
+
+// NEXT implement logic for passing selected entry to details
+func (m *model) UpdateDetails() {
+	// selected := m.results.SelectedItem()
+	// switch entry := selected.(type) {
+	// case RecollEntry:
+	// }
 }
 
 func (m model) Init() tea.Cmd {

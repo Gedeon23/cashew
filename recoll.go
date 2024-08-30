@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/base64"
+	"github.com/Gedeon23/cashew/entry"
 	"github.com/charmbracelet/bubbles/list"
 	"log"
 	"os/exec"
@@ -31,7 +32,7 @@ func Collect(term string) []list.Item {
 	for i := 2; i < len(data)-1 && i <= cap(entries); i++ {
 
 		fields := strings.Split(data[i], " ")
-		entry := RecollEntry{}
+		entry := entry.Recoll{}
 
 		url, err := base64.StdEncoding.DecodeString(fields[3])
 		if err != nil {
