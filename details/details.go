@@ -6,7 +6,11 @@ import (
 	"github.com/Gedeon23/cashew/entry"
 	"github.com/charmbracelet/bubbles/paginator"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 )
+
+var centerStyle = lipgloss.NewStyle().
+	Align(lipgloss.Center)
 
 type Model struct {
 	Entry entry.Recoll
@@ -45,10 +49,11 @@ func (d Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (d Model) View() string {
 	var s strings.Builder
+	s.WriteString(centerStyle.Render(d.Pager.View()))
+	s.WriteString("\n\n")
 	switch d.Pager.Page {
 	default:
 		s.WriteString(d.Entry.View())
 	}
-	s.WriteString(d.Pager.View())
 	return s.String()
 }

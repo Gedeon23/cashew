@@ -1,9 +1,11 @@
 package main
 
 import (
-	"github.com/Gedeon23/cashew/details"
 	"log"
 	"strings"
+
+	"github.com/Gedeon23/cashew/details"
+	"github.com/Gedeon23/cashew/entry"
 
 	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/key"
@@ -43,6 +45,7 @@ func newModel() model {
 	list.Title = "Results"
 	list.SetFilteringEnabled(false)
 	list.SetShowHelp(false)
+	list.SetWidth(30)
 	keys := NewDefaultKeyMap()
 	help := help.New()
 	details := details.New("", "", "", "")
@@ -77,12 +80,19 @@ func (m *model) NextFocus() {
 	}
 }
 
-// NEXT implement logic for passing selected entry to details
 func (m *model) UpdateDetails() {
-	// selected := m.results.SelectedItem()
-	// switch entry := selected.(type) {
-	// case RecollEntry:
-	// }
+	selected := m.results.SelectedItem()
+	switch selected := selected.(type) {
+	case entry.Recoll:
+		m.details.Entry = selected
+	default:
+		m.details.Entry = entry.Recoll{
+			DocTitle: "-",
+			Author:   "-",
+			File:     "-",
+			Url:      "-",
+		}
+	}
 }
 
 func (m model) Init() tea.Cmd {
@@ -105,12 +115,13 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case key.Matches(msg, m.keys.FocusNext):
 			m.NextFocus()
 		case key.Matches(msg, m.keys.ExecuteSearch):
-			// TODO Refactor unto Cmd probably?-------------------+
+			// REFACTOR unto Cmd probably?-------------------+
 			if !(m.search.Value() == "") {
 				m.results.SetItems(Collect(m.search.Value()))
 			}
 			//----------------------------------------------------+
 			m.SetFocus(FocusResults)
+			m.UpdateDetails()
 		case key.Matches(msg, m.keys.Quit):
 			if !(m.focus == FocusSearch) || msg.String() == "esc" {
 				return m, tea.Quit
@@ -141,6 +152,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.search, cmd = m.search.Update(msg)
 			case FocusResults:
 				m.results, cmd = m.results.Update(msg)
+				if key.Matches(msg, m.keys.NextEntry) || key.Matches(msg, m.keys.PrevEntry) {
+					m.UpdateDetails()
+				}
 			}
 			cmds = append(cmds, cmd)
 		}
@@ -153,13 +167,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		)
 	}
 
-	// var res_cmd, sea_cmd, hel_cmd tea.Cmd
-	// m.results, res_cmd = m.results.Update(msg)
-	// cmds = append(cmds, res_cmd)
-	// m.search, sea_cmd = m.search.Update(msg)
-	// cmds = append(cmds, sea_cmd)
-	// m.help, hel_cmd = m.help.Update(msg)
-	// cmds = append(cmds, hel_cmd)
 	return m, tea.Batch(cmds...)
 }
 
@@ -169,11 +176,14 @@ func (m model) View() string {
 	}
 
 	return style.Render(
-		lipgloss.JoinVertical(0,
-			m.search.View(),
-			"\n",
-			m.results.View(),
-			m.help.View(m.keys),
+		lipgloss.JoinHorizontal(0,
+			lipgloss.JoinVertical(0,
+				m.search.View(),
+				"\n",
+				m.results.View(),
+				m.help.View(m.keys),
+			),
+			m.details.View(),
 		))
 }
 
