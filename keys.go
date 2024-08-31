@@ -16,6 +16,7 @@ type KeyMap struct {
 	FocusNext           key.Binding
 	FocusSearch         key.Binding
 	FocusSearchAndClear key.Binding
+	OpenDocument        key.Binding
 }
 
 func (k KeyMap) ShortHelp() []key.Binding {
@@ -23,7 +24,7 @@ func (k KeyMap) ShortHelp() []key.Binding {
 	case FocusSearch:
 		return []key.Binding{k.Quit_ESC, k.Help_QM, k.FocusNext}
 	case FocusResults:
-		return []key.Binding{k.Quit, k.Help, k.NextEntry, k.PrevEntry, k.FocusSearch}
+		return []key.Binding{k.Quit, k.Help, k.NextEntry, k.PrevEntry, k.OpenDocument, k.FocusSearch}
 	case FocusDetail:
 		return []key.Binding{k.Quit, k.Help, k.FocusSearch}
 	default:
@@ -40,7 +41,7 @@ func (k KeyMap) FullHelp() [][]key.Binding {
 		}
 	case FocusResults:
 		return [][]key.Binding{
-			{k.FocusSearch, k.FocusSearchAndClear, k.FocusNext},
+			{k.OpenDocument, k.FocusSearch, k.FocusSearchAndClear, k.FocusNext},
 			{k.Quit, k.Help, k.NextEntry, k.PrevEntry},
 		}
 	case FocusDetail:
@@ -97,6 +98,10 @@ func NewDefaultKeyMap() KeyMap {
 		FocusNext: key.NewBinding(
 			key.WithKeys("tab"),
 			key.WithHelp("TAB", "focus next"),
+		),
+		OpenDocument: key.NewBinding(
+			key.WithKeys("o"),
+			key.WithHelp("o", "open doc"),
 		),
 	}
 }

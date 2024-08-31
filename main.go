@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"os/exec"
 	"strings"
 
 	"github.com/Gedeon23/cashew/details"
@@ -137,6 +138,21 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.results.Width(),
 					m.results.Height()-(newHeight-prevHeight),
 				)
+			} else {
+				var cmd tea.Cmd
+				m.search, cmd = m.search.Update(msg)
+				cmds = append(cmds, cmd)
+			}
+		case key.Matches(msg, m.keys.OpenDocument):
+			if !(m.focus == FocusSearch) {
+				selected := m.results.SelectedItem()
+				if selected, ok := selected.(entry.Recoll); ok {
+					cmd := exec.Command("xdg-open", selected.Url)
+
+					if err := cmd.Run(); err != nil {
+						log.Fatalf("Error: %v\n", err)
+					}
+				}
 			} else {
 				var cmd tea.Cmd
 				m.search, cmd = m.search.Update(msg)
