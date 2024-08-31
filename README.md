@@ -9,13 +9,14 @@ The goal of this project is to offer a keyboard driven UI for recoll and integra
 - Search recoll index
 - Display of Title (file name if no title is found in metadata) and Author
 - easy keyboard driven navigation
+- Detail View for each entry
+- easily open the entry in your preferred pdf viewer
 
 ## Planned Features
 
-- Detail View for each entry
-- Surrounding Directory View
-- easily open the entry in your preferred pdf viewer
 - easily open possible source files (latex, typst) in your editor 
+- Surrounding Directory View
+- flags to integrate into bash script
 
 
 ## Installation
