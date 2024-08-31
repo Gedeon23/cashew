@@ -203,7 +203,7 @@ func (m model) View() string {
 }
 
 func main() {
-	f, err := tea.LogToFile("debug.log", "debug")
+	f, err := tea.LogToFile("/tmp/cashew_debug.log", "debug")
 	if err != nil {
 		log.Fatalf("err: %v", err)
 	}
