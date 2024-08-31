@@ -4,6 +4,9 @@ import (
 	"log"
 	"strings"
 
+	"github.com/Gedeon23/cashew/details"
+	"github.com/Gedeon23/cashew/entry"
+
 	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/list"
@@ -13,23 +16,6 @@ import (
 )
 
 var style = lipgloss.NewStyle().Margin(1, 2)
-
-type RecollEntry struct {
-	Author   string
-	DocTitle string
-	File     string
-	Url      string
-}
-
-func (e RecollEntry) Title() string {
-	var icon string = " "
-	if e.File[len(e.File)-3:] == "pdf" {
-		icon = " "
-	}
-	return icon + e.DocTitle
-}
-func (e RecollEntry) Description() string { return " " + e.Author }
-func (e RecollEntry) FilterValue() string { return "" + e.Url }
 
 const (
 	FocusSearch = iota
@@ -43,6 +29,7 @@ type model struct {
 	keys    KeyMap
 	help    help.Model
 	focus   int
+	details details.Model
 	err     error
 }
 
@@ -54,17 +41,19 @@ func newModel() model {
 	search.Focus()
 	search.CharLimit = 200
 	search.Width = 20
-	list := list.New(items, NewEntryDelegate(), 0, 0)
+	list := list.New(items, entry.NewEntryDelegate(), 0, 0)
 	list.Title = "Results"
 	list.SetFilteringEnabled(false)
 	list.SetShowHelp(false)
 	keys := NewDefaultKeyMap()
 	help := help.New()
+	details := details.New("", "", "", "")
 	return model{
 		search:  search,
 		results: list,
 		keys:    keys,
 		help:    help,
+		details: details,
 	}
 }
 
@@ -90,6 +79,21 @@ func (m *model) NextFocus() {
 	}
 }
 
+func (m *model) UpdateDetails() {
+	selected := m.results.SelectedItem()
+	switch selected := selected.(type) {
+	case entry.Recoll:
+		m.details.Entry = selected
+	default:
+		m.details.Entry = entry.Recoll{
+			DocTitle: "",
+			Author:   "",
+			File:     "",
+			Url:      "",
+		}
+	}
+}
+
 func (m model) Init() tea.Cmd {
 	return nil
 }
@@ -110,12 +114,13 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case key.Matches(msg, m.keys.FocusNext):
 			m.NextFocus()
 		case key.Matches(msg, m.keys.ExecuteSearch):
-			// TODO Refactor unto Cmd probably?-------------------+
+			// REFACTOR unto Cmd probably?-------------------+
 			if !(m.search.Value() == "") {
 				m.results.SetItems(Collect(m.search.Value()))
 			}
 			//----------------------------------------------------+
 			m.SetFocus(FocusResults)
+			m.UpdateDetails()
 		case key.Matches(msg, m.keys.Quit):
 			if !(m.focus == FocusSearch) || msg.String() == "esc" {
 				return m, tea.Quit
@@ -134,7 +139,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.results.Height()-(newHeight-prevHeight),
 				)
 			} else {
-				// TODO refactor into function
 				var cmd tea.Cmd
 				m.search, cmd = m.search.Update(msg)
 				cmds = append(cmds, cmd)
@@ -146,6 +150,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.search, cmd = m.search.Update(msg)
 			case FocusResults:
 				m.results, cmd = m.results.Update(msg)
+				if key.Matches(msg, m.keys.NextEntry) || key.Matches(msg, m.keys.PrevEntry) {
+					m.UpdateDetails()
+				}
 			}
 			cmds = append(cmds, cmd)
 		}
@@ -153,18 +160,11 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		h, v := style.GetFrameSize()
 		m.results.SetSize(
-			msg.Width-h,
+			msg.Width/2-h,
 			msg.Height-v-5,
 		)
 	}
 
-	// var res_cmd, sea_cmd, hel_cmd tea.Cmd
-	// m.results, res_cmd = m.results.Update(msg)
-	// cmds = append(cmds, res_cmd)
-	// m.search, sea_cmd = m.search.Update(msg)
-	// cmds = append(cmds, sea_cmd)
-	// m.help, hel_cmd = m.help.Update(msg)
-	// cmds = append(cmds, hel_cmd)
 	return m, tea.Batch(cmds...)
 }
 
@@ -175,9 +175,14 @@ func (m model) View() string {
 
 	return style.Render(
 		lipgloss.JoinVertical(0,
-			m.search.View(),
-			"\n",
-			m.results.View(),
+			lipgloss.JoinHorizontal(0,
+				lipgloss.JoinVertical(0,
+					m.search.View(),
+					"\n",
+					m.results.View(),
+				),
+				m.details.View(),
+			),
 			m.help.View(m.keys),
 		))
 }
