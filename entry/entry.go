@@ -19,16 +19,6 @@ type Recoll struct {
 	Url      string
 }
 
-func (e Recoll) Title() string {
-	var icon string = " "
-	if e.File[len(e.File)-3:] == "pdf" {
-		icon = " "
-	}
-	return icon + e.DocTitle
-}
-func (e Recoll) Description() string {
-	return " " + e.Author
-}
 func (e Recoll) FilterValue() string { return "" + e.Url }
 
 func (m Recoll) Init() tea.Cmd {

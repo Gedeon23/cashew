@@ -41,11 +41,10 @@ func newModel() model {
 	search.Focus()
 	search.CharLimit = 200
 	search.Width = 20
-	list := list.New(items, NewEntryDelegate(), 0, 0)
+	list := list.New(items, entry.NewEntryDelegate(), 0, 0)
 	list.Title = "Results"
 	list.SetFilteringEnabled(false)
 	list.SetShowHelp(false)
-	list.SetWidth(30)
 	keys := NewDefaultKeyMap()
 	help := help.New()
 	details := details.New("", "", "", "")
@@ -87,10 +86,10 @@ func (m *model) UpdateDetails() {
 		m.details.Entry = selected
 	default:
 		m.details.Entry = entry.Recoll{
-			DocTitle: "-",
-			Author:   "-",
-			File:     "-",
-			Url:      "-",
+			DocTitle: "",
+			Author:   "",
+			File:     "",
+			Url:      "",
 		}
 	}
 }
@@ -140,7 +139,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.results.Height()-(newHeight-prevHeight),
 				)
 			} else {
-				// TODO refactor into function
 				var cmd tea.Cmd
 				m.search, cmd = m.search.Update(msg)
 				cmds = append(cmds, cmd)
@@ -162,7 +160,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		h, v := style.GetFrameSize()
 		m.results.SetSize(
-			msg.Width-h,
+			msg.Width/2-h,
 			msg.Height-v-5,
 		)
 	}
@@ -176,14 +174,16 @@ func (m model) View() string {
 	}
 
 	return style.Render(
-		lipgloss.JoinHorizontal(0,
-			lipgloss.JoinVertical(0,
-				m.search.View(),
-				"\n",
-				m.results.View(),
-				m.help.View(m.keys),
+		lipgloss.JoinVertical(0,
+			lipgloss.JoinHorizontal(0,
+				lipgloss.JoinVertical(0,
+					m.search.View(),
+					"\n",
+					m.results.View(),
+				),
+				m.details.View(),
 			),
-			m.details.View(),
+			m.help.View(m.keys),
 		))
 }
 
