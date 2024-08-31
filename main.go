@@ -6,6 +6,7 @@ import (
 
 	"github.com/Gedeon23/cashew/details"
 	"github.com/Gedeon23/cashew/entry"
+	"github.com/Gedeon23/cashew/styles"
 
 	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/key"
@@ -14,8 +15,6 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 )
-
-var style = lipgloss.NewStyle().Margin(1, 2)
 
 const (
 	FocusSearch = iota
@@ -158,7 +157,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 	case tea.WindowSizeMsg:
-		h, v := style.GetFrameSize()
+		h, v := styles.Root.GetFrameSize()
 		m.results.SetSize(
 			msg.Width/2-h,
 			msg.Height-v-5,
@@ -173,7 +172,7 @@ func (m model) View() string {
 		return "\n\nError: " + m.err.Error()
 	}
 
-	return style.Render(
+	return styles.Root.Render(
 		lipgloss.JoinVertical(0,
 			lipgloss.JoinHorizontal(0,
 				lipgloss.JoinVertical(0,
