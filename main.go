@@ -94,6 +94,27 @@ func (m *model) UpdateDetails() {
 	}
 }
 
+func (m *model) ExpandHelp() {
+	prevHeight := strings.Count(m.help.View(m.keys), "\n")
+	m.help.ShowAll = !m.help.ShowAll
+	newHeight := strings.Count(m.help.View(m.keys), "\n")
+	m.results.SetSize(
+		m.results.Width(),
+		m.results.Height()-(newHeight-prevHeight),
+	)
+}
+
+func (m *model) OpenSelected() {
+	selected := m.results.SelectedItem()
+	if selected, ok := selected.(entry.Recoll); ok {
+		cmd := exec.Command("xdg-open", selected.Url)
+
+		if err := cmd.Start(); err != nil {
+			log.Printf("Error: %v\n", err)
+		}
+	}
+}
+
 func (m model) Init() tea.Cmd {
 	return nil
 }
@@ -131,13 +152,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		case key.Matches(msg, m.keys.Help):
 			if !(m.focus == FocusSearch) || msg.String() == "?" {
-				prevHeight := strings.Count(m.help.View(m.keys), "\n")
-				m.help.ShowAll = !m.help.ShowAll
-				newHeight := strings.Count(m.help.View(m.keys), "\n")
-				m.results.SetSize(
-					m.results.Width(),
-					m.results.Height()-(newHeight-prevHeight),
-				)
+				m.ExpandHelp()
 			} else {
 				var cmd tea.Cmd
 				m.search, cmd = m.search.Update(msg)
@@ -145,14 +160,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		case key.Matches(msg, m.keys.OpenDocument):
 			if !(m.focus == FocusSearch) {
-				selected := m.results.SelectedItem()
-				if selected, ok := selected.(entry.Recoll); ok {
-					cmd := exec.Command("xdg-open", selected.Url)
-
-					if err := cmd.Run(); err != nil {
-						log.Fatalf("Error: %v\n", err)
-					}
-				}
+				m.OpenSelected()
 			} else {
 				var cmd tea.Cmd
 				m.search, cmd = m.search.Update(msg)
