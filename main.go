@@ -163,6 +163,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.OpenSelected()
 			default:
 				m.results, cmd = m.results.Update(msg)
+				m.UpdateDetails()
 				cmds = append(cmds, cmd)
 			}
 		case FocusDetail:
