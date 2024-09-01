@@ -25,7 +25,7 @@ The goal of this project is to offer a keyboard driven UI for recoll and integra
 
 ## Installation
 
-Assuming you have Go installed on your system, the installation process is rather straight forward.
+Assuming you have Go installed on your system, the installation process is as follows.
 Just clone this repo:
 ```sh
 git clone https://github.com/Gedeon23/cashew.git  
@@ -40,6 +40,11 @@ build the binary:
 ```
 go build .
 ```
+
+### Needed Applications
+
+Of course you will need recoll installed and setup to use this application.
+If you want to see snippets of the occurences inside the document, you will also need to install [ripgrep-all](github.com/phiresky/ripgrep-all)
 
 ---
 

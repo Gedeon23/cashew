@@ -17,6 +17,8 @@ type Recoll struct {
 	DocTitle string
 	File     string
 	Url      string
+
+	Snippets []string
 }
 
 func (e Recoll) FilterValue() string { return "" + e.Url }

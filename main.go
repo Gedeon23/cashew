@@ -47,7 +47,7 @@ func newModel() model {
 	list.SetShowHelp(false)
 	keys := NewDefaultKeyMap()
 	help := help.New()
-	details := details.New("", "", "", "")
+	details := details.New()
 	return model{
 		search:  search,
 		results: list,
@@ -81,6 +81,7 @@ func (m *model) NextFocus() {
 
 func (m *model) UpdateDetails() {
 	selected := m.results.SelectedItem()
+	m.details.Query = m.search.Value()
 	switch selected := selected.(type) {
 	case entry.Recoll:
 		m.details.Entry = selected
@@ -177,7 +178,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			case key.Matches(msg, m.keys.FocusSearchAndClear):
 				m.SetFocus(FocusSearch)
 				m.search.SetValue("")
-			case key.Matches(msg, m.keys.Help):
+			case key.Matches(msg, m.keys.Help_QM):
 				m.ExpandHelp()
 			case key.Matches(msg, m.keys.OpenDocument):
 				m.OpenSelected()
