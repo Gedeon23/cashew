@@ -121,65 +121,70 @@ func (m model) Init() tea.Cmd {
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
+	var cmd tea.Cmd
+
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		switch {
-		case key.Matches(msg, m.keys.FocusSearch):
-			if !(m.focus == FocusSearch) {
-				m.SetFocus(FocusSearch)
-			} else {
-				var cmd tea.Cmd
-				m.search, cmd = m.search.Update(msg)
-				cmds = append(cmds, cmd)
-			}
-		case key.Matches(msg, m.keys.FocusNext):
-			m.NextFocus()
-		case key.Matches(msg, m.keys.ExecuteSearch):
-			// REFACTOR unto Cmd probably?-------------------+
-			if !(m.search.Value() == "") {
-				m.results.SetItems(Collect(m.search.Value()))
-			}
-			//----------------------------------------------------+
-			m.SetFocus(FocusResults)
-			m.UpdateDetails()
-		case key.Matches(msg, m.keys.Quit):
-			if !(m.focus == FocusSearch) || msg.String() == "esc" {
-				return m, tea.Quit
-			} else {
-				var cmd tea.Cmd
-				m.search, cmd = m.search.Update(msg)
-				cmds = append(cmds, cmd)
-			}
-		case key.Matches(msg, m.keys.Help):
-			if !(m.focus == FocusSearch) || msg.String() == "?" {
-				m.ExpandHelp()
-			} else {
-				var cmd tea.Cmd
-				m.search, cmd = m.search.Update(msg)
-				cmds = append(cmds, cmd)
-			}
-		case key.Matches(msg, m.keys.OpenDocument):
-			if !(m.focus == FocusSearch) {
-				m.OpenSelected()
-			} else {
-				var cmd tea.Cmd
-				m.search, cmd = m.search.Update(msg)
-				cmds = append(cmds, cmd)
-			}
-		default:
-			var cmd tea.Cmd
-			switch m.focus {
-			case FocusSearch:
-				m.search, cmd = m.search.Update(msg)
-			case FocusResults:
-				m.results, cmd = m.results.Update(msg)
-				if key.Matches(msg, m.keys.NextEntry) || key.Matches(msg, m.keys.PrevEntry) {
-					m.UpdateDetails()
+		switch m.focus {
+		case FocusSearch:
+			switch {
+			case key.Matches(msg, m.keys.FocusNext):
+				m.NextFocus()
+			case key.Matches(msg, m.keys.ExecuteSearch):
+				// REFACTOR unto Cmd probably?-------------------+
+				if !(m.search.Value() == "") {
+					m.results.SetItems(Collect(m.search.Value()))
 				}
+				//----------------------------------------------------+
+				m.SetFocus(FocusResults)
+				m.UpdateDetails()
+			case key.Matches(msg, m.keys.Quit_ESC):
+				return m, tea.Quit
+			case key.Matches(msg, m.keys.Help_QM):
+				m.ExpandHelp()
+			default:
+				m.search, cmd = m.search.Update(msg)
+				cmds = append(cmds, cmd)
 			}
-			cmds = append(cmds, cmd)
+		case FocusResults:
+			switch {
+			case key.Matches(msg, m.keys.FocusNext):
+				m.NextFocus()
+			case key.Matches(msg, m.keys.Quit):
+				return m, tea.Quit
+			case key.Matches(msg, m.keys.FocusSearch):
+				m.SetFocus(FocusSearch)
+			case key.Matches(msg, m.keys.FocusSearchAndClear):
+				m.SetFocus(FocusSearch)
+				m.search.SetValue("")
+			case key.Matches(msg, m.keys.Help):
+				m.ExpandHelp()
+			case key.Matches(msg, m.keys.OpenDocument):
+				m.OpenSelected()
+			default:
+				m.results, cmd = m.results.Update(msg)
+				cmds = append(cmds, cmd)
+			}
+		case FocusDetail:
+			switch {
+			case key.Matches(msg, m.keys.FocusNext):
+				m.NextFocus()
+			case key.Matches(msg, m.keys.Quit):
+				return m, tea.Quit
+			case key.Matches(msg, m.keys.FocusSearch):
+				m.SetFocus(FocusSearch)
+			case key.Matches(msg, m.keys.FocusSearchAndClear):
+				m.SetFocus(FocusSearch)
+				m.search.SetValue("")
+			case key.Matches(msg, m.keys.Help):
+				m.ExpandHelp()
+			case key.Matches(msg, m.keys.OpenDocument):
+				m.OpenSelected()
+			default:
+				m.details, cmd = m.details.Update(msg)
+				cmds = append(cmds, cmd)
+			}
 		}
-
 	case tea.WindowSizeMsg:
 		h, v := styles.Root.GetFrameSize()
 		m.results.SetSize(
