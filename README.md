@@ -1,6 +1,6 @@
 # Cashew
 
-**Cashew** (name not final) is a terminal user interface for [recoll](recoll.org).
+**Cashew** (name not final) is a terminal user interface for [recoll](https://recoll.org).
 The goal of this project is to offer a keyboard driven UI for recoll and integrate well into workflows centered around the terminal.
 
 
@@ -44,9 +44,9 @@ go build .
 ### Needed Applications
 
 Of course you will need recoll installed and setup to use this application.
-If you want to see snippets of the occurences inside the document, you will also need to install [ripgrep-all](github.com/phiresky/ripgrep-all)
+If you want to see snippets of the occurences inside the document, you will also need to install [ripgrep-all](https://github.com/phiresky/ripgrep-all)
 
 ---
 
 ## Credits
-I'm using [bubbletea](github.com/charmbracelet/bubbletea) for the TUI and [recoll](reoll.org) for indexing and querying PDFs
+I'm using [bubbletea](https://github.com/charmbracelet/bubbletea) for the TUI and [recoll](https://recoll.org) for indexing and querying PDFs
