@@ -12,6 +12,10 @@ The goal of this project is to offer a keyboard driven UI for recoll and integra
 - Detail View for each entry
 - easily open the entry in your preferred pdf viewer
 
+## In Progress Features
+
+- Snippets View
+
 ## Planned Features
 
 - easily open possible source files (latex, typst) in your editor 
