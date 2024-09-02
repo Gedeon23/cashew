@@ -44,7 +44,7 @@ go build .
 ### Needed Applications
 
 Of course you will need recoll installed and setup to use this application.
-If you want to see snippets of the occurences inside the document, you will also need to install [ripgrep-all](https://github.com/phiresky/ripgrep-all)
+~If you want to see snippets of the occurences inside the document, you will also need to install [ripgrep-all](https://github.com/phiresky/ripgrep-all)~ (snippets are now done through recoll)
 
 ---
 
