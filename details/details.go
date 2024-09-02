@@ -21,6 +21,7 @@ type Model struct {
 	Entry entry.Recoll
 	Pager paginator.Model
 	Query string
+	Err   error
 }
 
 func New() Model {
@@ -34,6 +35,7 @@ func New() Model {
 		Entry: entry,
 		Pager: pager,
 		Query: "",
+		Err:   nil,
 	}
 }
 
@@ -49,13 +51,17 @@ func (d Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	cmds = append(cmds, cmd)
 
 	if d.Pager.Page == SnippetsPage && len(d.Entry.Snippets) == 0 {
-		GetSnipptets(d.Entry.Url, d.Query, &d.Entry.Snippets)
+		d.Err = GetSnipptets(&d.Entry, d.Query)
 	}
 
 	return d, tea.Batch(cmds...)
 }
 
 func (d Model) View() string {
+	if d.Err != nil {
+		return d.Err.Error()
+	}
+
 	var s strings.Builder
 	s.WriteString(centerStyle.Render(d.Pager.View()))
 	s.WriteString("\n\n")
