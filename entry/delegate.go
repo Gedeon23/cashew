@@ -3,6 +3,7 @@ package entry
 import (
 	"fmt"
 	"io"
+	"strconv"
 
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
@@ -37,10 +38,18 @@ func (d Delegate) Render(w io.Writer, m list.Model, index int, entry list.Item) 
 			title = title[:m.Width()-4] + "…"
 		}
 
-		auth := " " + entry.Author
+		var snipDisplay string
+		snipCount := len(entry.Snippets)
+		if snipCount != 0 {
+			snipDisplay = "  " + strconv.Itoa(snipCount)
+		} else {
+			snipDisplay = ""
+		}
+		auth := " " + entry.Author + snipDisplay
 		if len(auth) > (m.Width() - 3) {
 			auth = auth[:m.Width()-4] + "…"
 		}
+
 		if index == m.Index() {
 			title = d.ItemStyles.SelectedTitle.Render(title)
 			auth = d.ItemStyles.SelectedDesc.Render(auth)

@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
+	"log"
 	"os/exec"
 	"path/filepath"
 
@@ -18,6 +19,8 @@ func GetSnipptets(entry *entry.Recoll, term string) error {
 	if err != nil {
 		return fmt.Errorf("Error in recoll query %s for snippets:\n %s\n %s", cmd.String(), err, out)
 	}
+
+	log.Printf("Getting Snippets for %s", entry)
 
 	scan := bufio.NewScanner(bytes.NewReader(out))
 	lineNumber := 0

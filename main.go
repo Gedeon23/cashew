@@ -25,7 +25,8 @@ const (
 
 type model struct {
 	search  textinput.Model
-	results list.Model
+	results []list.Item
+	list    list.Model
 	keys    KeyMap
 	help    help.Model
 	focus   int
@@ -34,23 +35,27 @@ type model struct {
 }
 
 func newModel() model {
-	var items []list.Item
 	search := textinput.New()
 	search.Placeholder = "search…"
 	search.Prompt = " "
 	search.Focus()
 	search.CharLimit = 200
 	search.Width = 20
-	list := list.New(items, entry.NewEntryDelegate(), 0, 0)
+
+	var results []list.Item
+	list := list.New(results, entry.NewEntryDelegate(), 0, 0)
 	list.Title = "Results"
 	list.SetFilteringEnabled(false)
 	list.SetShowHelp(false)
+
 	keys := NewDefaultKeyMap()
 	help := help.New()
+
 	details := details.New()
 	return model{
 		search:  search,
-		results: list,
+		list:    list,
+		results: results,
 		keys:    keys,
 		help:    help,
 		details: details,
@@ -80,18 +85,12 @@ func (m *model) NextFocus() {
 }
 
 func (m *model) UpdateDetails() {
-	selected := m.results.SelectedItem()
+	index := m.list.Index()
+	selected := m.results[index]
 	m.details.Query = m.search.Value()
 	switch selected := selected.(type) {
 	case entry.Recoll:
-		m.details.Entry = selected
-	default:
-		m.details.Entry = entry.Recoll{
-			DocTitle: "",
-			Author:   "",
-			File:     "",
-			Url:      "",
-		}
+		m.details.SetEntry(&selected)
 	}
 }
 
@@ -99,14 +98,14 @@ func (m *model) ExpandHelp() {
 	prevHeight := strings.Count(m.help.View(m.keys), "\n")
 	m.help.ShowAll = !m.help.ShowAll
 	newHeight := strings.Count(m.help.View(m.keys), "\n")
-	m.results.SetSize(
-		m.results.Width(),
-		m.results.Height()-(newHeight-prevHeight),
+	m.list.SetSize(
+		m.list.Width(),
+		m.list.Height()-(newHeight-prevHeight),
 	)
 }
 
 func (m *model) OpenSelected() {
-	selected := m.results.SelectedItem()
+	selected := m.list.SelectedItem()
 	if selected, ok := selected.(entry.Recoll); ok {
 		cmd := exec.Command("xdg-open", selected.Url)
 
@@ -134,7 +133,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			case key.Matches(msg, m.keys.ExecuteSearch):
 				// REFACTOR into Cmd probably?-------------------+
 				if !(m.search.Value() == "") {
-					m.results.SetItems(Collect(m.search.Value()))
+					m.results = Collect(m.search.Value())
+					m.list.SetItems(m.results)
 				}
 				//----------------------------------------------------+
 				m.SetFocus(FocusResults)
@@ -163,7 +163,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			case key.Matches(msg, m.keys.OpenDocument):
 				m.OpenSelected()
 			default:
-				m.results, cmd = m.results.Update(msg)
+				m.list, cmd = m.list.Update(msg)
 				m.UpdateDetails()
 				cmds = append(cmds, cmd)
 			}
@@ -189,7 +189,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	case tea.WindowSizeMsg:
 		h, v := styles.Root.GetFrameSize()
-		m.results.SetSize(
+		m.list.SetSize(
 			msg.Width/2-h,
 			msg.Height-v-5,
 		)
@@ -209,7 +209,7 @@ func (m model) View() string {
 				lipgloss.JoinVertical(0,
 					m.search.View(),
 					"\n",
-					m.results.View(),
+					m.list.View(),
 				),
 				m.details.View(),
 			),

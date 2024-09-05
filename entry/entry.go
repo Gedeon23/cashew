@@ -1,9 +1,11 @@
 package entry
 
 import (
+	"fmt"
+	"strings"
+
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"strings"
 )
 
 var fieldStyle = lipgloss.NewStyle().
@@ -37,6 +39,7 @@ func (m Recoll) View() string {
 	s.WriteString(fieldStyle.Render("Author") + "\t" + m.Author + "\n\n")
 	s.WriteString(fieldStyle.Render(" File ") + "\t" + m.File + "\n\n")
 	s.WriteString(fieldStyle.Render(" Url  ") + "\t" + m.Url + "\n\n")
+	s.WriteString(fmt.Sprintf("Snippets (-> %s): %s", &m, m.Snippets))
 
 	return s.String()
 }
