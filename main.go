@@ -132,7 +132,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			case key.Matches(msg, m.keys.FocusNext):
 				m.NextFocus()
 			case key.Matches(msg, m.keys.ExecuteSearch):
-				// REFACTOR unto Cmd probably?-------------------+
+				// REFACTOR into Cmd probably?-------------------+
 				if !(m.search.Value() == "") {
 					m.results.SetItems(Collect(m.search.Value()))
 				}

@@ -10,7 +10,6 @@ import (
 	"github.com/Gedeon23/cashew/entry"
 )
 
-// NEXT implement snippets detail view
 func GetSnipptets(entry *entry.Recoll, term string) error {
 	query := fmt.Sprintf("%s dir:\"%s\" filename:\"%s\"", term, filepath.Dir(entry.Url[7:]), entry.File)
 	cmd := exec.Command("recoll", "-t", "-A", "-p 12", query)
