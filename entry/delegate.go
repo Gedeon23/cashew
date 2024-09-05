@@ -5,6 +5,8 @@ import (
 	"io"
 	"strconv"
 
+	"github.com/Gedeon23/cashew/recoll"
+
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -28,7 +30,7 @@ func (d Delegate) Spacing() int {
 }
 
 func (d Delegate) Render(w io.Writer, m list.Model, index int, entry list.Item) {
-	if entry, ok := entry.(Recoll); ok {
+	if entry, ok := entry.(recoll.Entry); ok {
 		var icon string = " "
 		if entry.File[len(entry.File)-3:] == "pdf" {
 			icon = " "

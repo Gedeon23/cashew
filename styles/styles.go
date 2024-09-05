@@ -5,3 +5,9 @@ import (
 )
 
 var Root = lipgloss.NewStyle().Margin(1, 2)
+
+var EntryField = lipgloss.NewStyle().
+	Background(lipgloss.Color("#AA86E8")).
+	Foreground(lipgloss.Color("#FFFFFF")).
+	Padding(0, 1).
+	Bold(true)

@@ -1,12 +1,14 @@
-package main
+package recoll
 
 import (
+	"bufio"
 	"bytes"
 	"encoding/base64"
-	"github.com/Gedeon23/cashew/entry"
+	"fmt"
 	"github.com/charmbracelet/bubbles/list"
 	"log"
 	"os/exec"
+	"path/filepath"
 	"strings"
 )
 
@@ -32,7 +34,7 @@ func Collect(term string) []list.Item {
 	for i := 2; i < len(data)-1 && i <= cap(entries); i++ {
 
 		fields := strings.Split(data[i], " ")
-		entry := entry.Recoll{}
+		entry := Entry{}
 
 		url, err := base64.StdEncoding.DecodeString(fields[3])
 		if err != nil {
@@ -68,4 +70,27 @@ func Collect(term string) []list.Item {
 
 	log.Printf("returned entries: %s", entries)
 	return entries
+}
+
+func GetSnipptets(entry *Entry, term string) error {
+	query := fmt.Sprintf("%s dir:\"%s\" filename:\"%s\"", term, filepath.Dir(entry.Url[7:]), entry.File)
+	cmd := exec.Command("recoll", "-t", "-A", "-p 12", query)
+
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("Error in recoll query %s for snippets:\n %s\n %s", cmd.String(), err, out)
+	}
+
+	log.Printf("Getting Snippets for %s", entry)
+
+	scan := bufio.NewScanner(bytes.NewReader(out))
+	lineNumber := 0
+	for scan.Scan() {
+		if lineNumber >= 5 {
+			entry.Snippets = append(entry.Snippets, scan.Text())
+		}
+		lineNumber++
+	}
+
+	return nil
 }

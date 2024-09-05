@@ -3,7 +3,7 @@ package details
 import (
 	"strings"
 
-	"github.com/Gedeon23/cashew/entry"
+	"github.com/Gedeon23/cashew/recoll"
 	"github.com/charmbracelet/bubbles/paginator"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -18,7 +18,7 @@ var centerStyle = lipgloss.NewStyle().
 	Align(lipgloss.Center)
 
 type Model struct {
-	Entry *entry.Recoll
+	Entry *recoll.Entry
 	Pager paginator.Model
 	Query string
 	Err   error
@@ -29,7 +29,7 @@ func New() Model {
 	pager.Type = paginator.Dots
 	pager.PerPage = 1
 	pager.TotalPages = 2
-	var entry *entry.Recoll
+	var entry *recoll.Entry
 
 	return Model{
 		Entry: entry,
@@ -39,10 +39,10 @@ func New() Model {
 	}
 }
 
-func (d *Model) SetEntry(entry *entry.Recoll) {
+func (d *Model) SetEntry(entry *recoll.Entry) {
 	d.Entry = entry
 	if d.Pager.Page == SnippetsPage && len(d.Entry.Snippets) == 0 {
-		d.Err = GetSnipptets(d.Entry, d.Query)
+		d.Err = recoll.GetSnipptets(d.Entry, d.Query)
 	}
 }
 
@@ -58,7 +58,7 @@ func (d Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	cmds = append(cmds, cmd)
 
 	if d.Pager.Page == SnippetsPage && len(d.Entry.Snippets) == 0 {
-		d.Err = GetSnipptets(d.Entry, d.Query)
+		d.Err = recoll.GetSnipptets(d.Entry, d.Query)
 	}
 
 	return d, tea.Batch(cmds...)

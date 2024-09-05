@@ -7,6 +7,7 @@ import (
 
 	"github.com/Gedeon23/cashew/details"
 	"github.com/Gedeon23/cashew/entry"
+	"github.com/Gedeon23/cashew/recoll"
 	"github.com/Gedeon23/cashew/styles"
 
 	"github.com/charmbracelet/bubbles/help"
@@ -89,7 +90,7 @@ func (m *model) UpdateDetails() {
 	selected := m.results[index]
 	m.details.Query = m.search.Value()
 	switch selected := selected.(type) {
-	case entry.Recoll:
+	case recoll.Entry:
 		m.details.SetEntry(&selected)
 	}
 }
@@ -106,7 +107,7 @@ func (m *model) ExpandHelp() {
 
 func (m *model) OpenSelected() {
 	selected := m.list.SelectedItem()
-	if selected, ok := selected.(entry.Recoll); ok {
+	if selected, ok := selected.(recoll.Entry); ok {
 		cmd := exec.Command("xdg-open", selected.Url)
 
 		if err := cmd.Start(); err != nil {
@@ -133,7 +134,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			case key.Matches(msg, m.keys.ExecuteSearch):
 				// REFACTOR into Cmd probably?-------------------+
 				if !(m.search.Value() == "") {
-					m.results = Collect(m.search.Value())
+					m.results = recoll.Collect(m.search.Value())
 					m.list.SetItems(m.results)
 				}
 				//----------------------------------------------------+
