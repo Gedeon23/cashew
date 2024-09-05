@@ -26,7 +26,6 @@ const (
 
 type model struct {
 	search  textinput.Model
-	results []list.Item
 	list    list.Model
 	keys    KeyMap
 	help    help.Model
@@ -45,8 +44,8 @@ func newModel() model {
 
 	var results []list.Item
 	list := list.New(results, entry.NewEntryDelegate(), 0, 0)
-	list.Title = "Results"
 	list.SetFilteringEnabled(false)
+	list.SetShowTitle(false)
 	list.SetShowHelp(false)
 
 	keys := NewDefaultKeyMap()
@@ -56,7 +55,6 @@ func newModel() model {
 	return model{
 		search:  search,
 		list:    list,
-		results: results,
 		keys:    keys,
 		help:    help,
 		details: details,
@@ -86,8 +84,7 @@ func (m *model) NextFocus() {
 }
 
 func (m *model) UpdateDetails() {
-	index := m.list.Index()
-	selected := m.results[index]
+	selected := m.list.SelectedItem()
 	m.details.Query = m.search.Value()
 	switch selected := selected.(type) {
 	case recoll.Entry:
@@ -132,14 +129,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			case key.Matches(msg, m.keys.FocusNext):
 				m.NextFocus()
 			case key.Matches(msg, m.keys.ExecuteSearch):
-				// REFACTOR into Cmd probably?-------------------+
 				if !(m.search.Value() == "") {
-					m.results = recoll.Collect(m.search.Value())
-					m.list.SetItems(m.results)
+					cmd = Collect(m.search.Value())
+					cmds = append(cmds, cmd)
 				}
-				//----------------------------------------------------+
-				m.SetFocus(FocusResults)
-				m.UpdateDetails()
 			case key.Matches(msg, m.keys.Quit_ESC):
 				return m, tea.Quit
 			case key.Matches(msg, m.keys.Help_QM):
@@ -194,6 +187,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			msg.Width/2-h,
 			msg.Height-v-5,
 		)
+	case CollectMsg:
+		m.list.SetItems(msg.Results)
+		m.SetFocus(FocusResults)
+		m.UpdateDetails()
 	}
 
 	return m, tea.Batch(cmds...)
