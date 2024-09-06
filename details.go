@@ -1,4 +1,4 @@
-package details
+package main
 
 import (
 	"strings"
@@ -17,21 +17,21 @@ const (
 var centerStyle = lipgloss.NewStyle().
 	Align(lipgloss.Center)
 
-type Model struct {
+type Details struct {
 	Entry *recoll.Entry
 	Pager paginator.Model
 	Query string
 	Err   error
 }
 
-func New() Model {
+func NewDetails() Details {
 	pager := paginator.New()
 	pager.Type = paginator.Dots
 	pager.PerPage = 1
 	pager.TotalPages = 2
 	var entry *recoll.Entry
 
-	return Model{
+	return Details{
 		Entry: entry,
 		Pager: pager,
 		Query: "",
@@ -39,32 +39,36 @@ func New() Model {
 	}
 }
 
-func (d *Model) SetEntry(entry *recoll.Entry) {
-	d.Entry = entry
-	if d.Pager.Page == SnippetsPage && len(d.Entry.Snippets) == 0 {
-		d.Err = recoll.GetSnipptets(d.Entry, d.Query)
-	}
-}
-
-func (d Model) Init() tea.Cmd {
+func (d Details) Init() tea.Cmd {
 	return nil
 }
 
-func (d Model) Update(msg tea.Msg) (Model, tea.Cmd) {
+func (d Details) Update(msg tea.Msg) (Details, tea.Cmd) {
 	var cmds []tea.Cmd
 	var cmd tea.Cmd
 
-	d.Pager, cmd = d.Pager.Update(msg)
-	cmds = append(cmds, cmd)
-
-	if d.Pager.Page == SnippetsPage && len(d.Entry.Snippets) == 0 {
-		d.Err = recoll.GetSnipptets(d.Entry, d.Query)
+	switch msg.(type) {
+	case SnippetsMsg:
+		d.Err = msg.(SnippetsMsg).Err
+	case SwitchEntryMsg:
+		d.Entry = msg.(SwitchEntryMsg).NewEntry
+		if d.Pager.Page == SnippetsPage && len(d.Entry.Snippets) == 0 {
+			cmd = GetSnipptets(d.Entry, d.Query)
+			cmds = append(cmds, cmd)
+		}
+	default:
+		d.Pager, cmd = d.Pager.Update(msg)
+		cmds = append(cmds, cmd)
+		if d.Pager.Page == SnippetsPage && len(d.Entry.Snippets) == 0 {
+			cmd = GetSnipptets(d.Entry, d.Query)
+			cmds = append(cmds, cmd)
+		}
 	}
 
 	return d, tea.Batch(cmds...)
 }
 
-func (d Model) View() string {
+func (d Details) View() string {
 	if d.Err != nil {
 		return d.Err.Error()
 	}

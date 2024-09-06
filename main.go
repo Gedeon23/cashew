@@ -5,7 +5,6 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/Gedeon23/cashew/details"
 	"github.com/Gedeon23/cashew/entry"
 	"github.com/Gedeon23/cashew/recoll"
 	"github.com/Gedeon23/cashew/styles"
@@ -30,7 +29,7 @@ type model struct {
 	keys    KeyMap
 	help    help.Model
 	focus   int
-	details details.Model
+	details Details
 	err     error
 }
 
@@ -51,7 +50,7 @@ func newModel() model {
 	keys := NewDefaultKeyMap()
 	help := help.New()
 
-	details := details.New()
+	details := NewDetails()
 	return model{
 		search:  search,
 		list:    list,
@@ -88,7 +87,7 @@ func (m *model) UpdateDetails() {
 	m.details.Query = m.search.Value()
 	switch selected := selected.(type) {
 	case recoll.Entry:
-		m.details.SetEntry(&selected)
+		m.details.Update(SwitchEntryMsg{NewEntry: &selected})
 	}
 }
 
@@ -130,6 +129,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.NextFocus()
 			case key.Matches(msg, m.keys.ExecuteSearch):
 				if !(m.search.Value() == "") {
+					m.details.Query = m.search.Value()
 					cmd = Collect(m.search.Value())
 					cmds = append(cmds, cmd)
 				}
@@ -158,8 +158,11 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.OpenSelected()
 			default:
 				m.list, cmd = m.list.Update(msg)
-				m.UpdateDetails()
 				cmds = append(cmds, cmd)
+				if entry, ok := m.list.SelectedItem().(recoll.Entry); ok {
+					m.details, cmd = m.details.Update(SwitchEntryMsg{NewEntry: &entry})
+					cmds = append(cmds, cmd)
+				}
 			}
 		case FocusDetail:
 			switch {
@@ -190,7 +193,13 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case CollectMsg:
 		m.list.SetItems(msg.Results)
 		m.SetFocus(FocusResults)
-		m.UpdateDetails()
+		if entry, ok := m.list.SelectedItem().(recoll.Entry); ok {
+			m.details, cmd = m.details.Update(SwitchEntryMsg{NewEntry: &entry})
+			cmds = append(cmds, cmd)
+		}
+	case SnippetsMsg:
+		m.details, cmd = m.details.Update(msg)
+		cmds = append(cmds, cmd)
 	}
 
 	return m, tea.Batch(cmds...)

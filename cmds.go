@@ -25,3 +25,7 @@ func GetSnipptets(entry *recoll.Entry, term string) tea.Cmd {
 		return SnippetsMsg{Err: recoll.GetSnipptets(entry, term)}
 	}
 }
+
+type SwitchEntryMsg struct {
+	NewEntry *recoll.Entry
+}
