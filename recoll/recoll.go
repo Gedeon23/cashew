@@ -34,7 +34,7 @@ func Collect(term string) []list.Item {
 	for i := 2; i < len(data)-1 && i <= cap(entries); i++ {
 
 		fields := strings.Split(data[i], " ")
-		entry := Entry{}
+		entry := Entry{Query: term}
 
 		url, err := base64.StdEncoding.DecodeString(fields[3])
 		if err != nil {

@@ -83,7 +83,6 @@ func (m *model) NextFocus() {
 
 func (m *model) UpdateDetails() {
 	selected := m.list.SelectedItem()
-	m.details.Query = m.search.Value()
 	switch selected := selected.(type) {
 	case recoll.Entry:
 		m.details.Update(SwitchEntryMsg{NewEntry: &selected})
@@ -128,7 +127,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.NextFocus()
 			case key.Matches(msg, m.keys.ExecuteSearch):
 				if !(m.search.Value() == "") {
-					m.details.Query = m.search.Value()
 					cmd = Collect(m.search.Value())
 					cmds = append(cmds, cmd)
 				}

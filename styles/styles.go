@@ -16,3 +16,8 @@ var EntryField = lipgloss.NewStyle().
 var Snippet = list.NewDefaultItemStyles()
 var SelectedSnippet = Snippet.SelectedTitle
 var NormalSnippet = Snippet.NormalTitle
+
+var SnippetMatch = lipgloss.NewStyle().
+	Bold(true).
+	Background(lipgloss.Color("#FF0000")).
+	Foreground(lipgloss.Color("#FFFFFF"))

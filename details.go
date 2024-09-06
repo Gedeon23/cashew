@@ -23,7 +23,6 @@ type Details struct {
 	Entry           *recoll.Entry
 	SelectedSnippet int
 	Pager           paginator.Model
-	Query           string
 	Err             error
 }
 
@@ -38,7 +37,6 @@ func NewDetails() Details {
 		Entry:           entry,
 		SelectedSnippet: 0,
 		Pager:           pager,
-		Query:           "",
 		Err:             nil,
 	}
 }
@@ -57,16 +55,20 @@ func (d Details) Update(msg tea.Msg) (Details, tea.Cmd) {
 	case SwitchEntryMsg:
 		d.Entry = msg.NewEntry
 		if d.Pager.Page == SnippetsPage && len(d.Entry.Snippets) == 0 {
-			cmd = GetSnipptets(d.Entry, d.Query)
+			cmd = GetSnipptets(d.Entry, d.Entry.Query)
 			cmds = append(cmds, cmd)
 			d.SelectedSnippet = 0
 		}
 	case tea.KeyMsg:
 		switch {
 		case msg.String() == "j":
-			d.SelectedSnippet++
+			if d.SelectedSnippet < len(d.Entry.Snippets)-1 {
+				d.SelectedSnippet++
+			}
 		case msg.String() == "k":
-			d.SelectedSnippet--
+			if d.SelectedSnippet > 0 {
+				d.SelectedSnippet--
+			}
 		case msg.String() == "o":
 			if d.Pager.Page == SnippetsPage {
 				cmd := exec.Command("zathura", "--page="+strings.TrimSpace(d.Entry.Snippets[d.SelectedSnippet].Page), d.Entry.Url)
@@ -83,7 +85,7 @@ func (d Details) Update(msg tea.Msg) (Details, tea.Cmd) {
 			d.Pager, cmd = d.Pager.Update(msg)
 			cmds = append(cmds, cmd)
 			if d.Pager.Page == SnippetsPage && len(d.Entry.Snippets) == 0 {
-				cmd = GetSnipptets(d.Entry, d.Query)
+				cmd = GetSnipptets(d.Entry, d.Entry.Query)
 				cmds = append(cmds, cmd)
 			}
 		}
@@ -91,7 +93,7 @@ func (d Details) Update(msg tea.Msg) (Details, tea.Cmd) {
 		d.Pager, cmd = d.Pager.Update(msg)
 		cmds = append(cmds, cmd)
 		if d.Pager.Page == SnippetsPage && len(d.Entry.Snippets) == 0 {
-			cmd = GetSnipptets(d.Entry, d.Query)
+			cmd = GetSnipptets(d.Entry, d.Entry.Query)
 			cmds = append(cmds, cmd)
 		}
 	}
@@ -114,7 +116,7 @@ func (d Details) View() string {
 		case SnippetsPage:
 			if len(d.Entry.Snippets) != 0 {
 				for i, snip := range d.Entry.Snippets {
-					s.WriteString(RenderSnippet(d.SelectedSnippet == i, i, snip))
+					s.WriteString(RenderSnippet(d.Entry.Query, d.SelectedSnippet == i, i, snip))
 					s.WriteString("\n")
 				}
 			}

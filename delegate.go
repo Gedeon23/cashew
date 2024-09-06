@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"strconv"
+	"strings"
 
 	"github.com/Gedeon23/cashew/recoll"
 	"github.com/Gedeon23/cashew/styles"
@@ -93,20 +94,20 @@ func (d SnippetDelegate) Spacing() int {
 	return d.spacing
 }
 
-func (d SnippetDelegate) Render(w io.Writer, m list.Model, index int, snippet list.Item) {
-	if snippet, ok := snippet.(recoll.Snippet); ok {
-		text := " " + snippet.Page + " " + snippet.Text
-		if len(text) > (m.Width() - 3) {
-			text = text[:m.Width()-4] + "…"
-		}
-		if index == m.Index() {
-			text = d.ItemStyles.SelectedTitle.Render(text)
-		} else {
-			text = d.ItemStyles.NormalTitle.Render(text)
-		}
-		fmt.Fprintf(w, text)
-	}
-}
+// func (d SnippetDelegate) Render(w io.Writer, m list.Model, index int, snippet list.Item) {
+// 	if snippet, ok := snippet.(recoll.Snippet); ok {
+// 		text := " " + snippet.Page + " " + snippet.Text
+// 		if len(text) > (m.Width() - 3) {
+// 			text = text[:m.Width()-4] + "…"
+// 		}
+// 		if index == m.Index() {
+// 			text = d.ItemStyles.SelectedTitle.Render(text)
+// 		} else {
+// 			text = d.ItemStyles.NormalTitle.Render(text)
+// 		}
+// 		fmt.Fprintf(w, text)
+// 	}
+// }
 
 func NewSnippetDelegate() SnippetDelegate {
 	return SnippetDelegate{
@@ -116,15 +117,25 @@ func NewSnippetDelegate() SnippetDelegate {
 	}
 }
 
-func RenderSnippet(selected bool, index int, snippet recoll.Snippet) string {
-	text := " " + snippet.Page + " " + snippet.Text
+func RenderSnippet(query string, selected bool, index int, snippet recoll.Snippet) string {
 	// if len(text) > (m.Width() - 3) {
 	// 	text = text[:m.Width()-4] + "…"
 	// }
-	if selected {
-		text = styles.SelectedSnippet.Render(text)
+
+	var text string
+	queryIndex := strings.Index(snippet.Text, query)
+	if queryIndex != -1 {
+		before := snippet.Text[:queryIndex]
+		after := snippet.Text[queryIndex+len(query):]
+		text = before + styles.SnippetMatch.Render(query) + after
 	} else {
-		text = styles.NormalSnippet.Render(text)
+		text = snippet.Text
+	}
+
+	if selected {
+		text = styles.SelectedSnippet.Render(" "+snippet.Page+" ") + text
+	} else {
+		text = styles.NormalSnippet.Render(" "+snippet.Page+" ") + text
 	}
 	return text
 }

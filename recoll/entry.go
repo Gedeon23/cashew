@@ -18,6 +18,7 @@ type Entry struct {
 	DocTitle string
 	File     string
 	Url      string
+	Query    string
 
 	Snippets []Snippet
 }
