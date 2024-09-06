@@ -81,13 +81,14 @@ func GetSnipptets(entry *Entry, term string) error {
 		return fmt.Errorf("Error in recoll query %s for snippets:\n %s\n %s", cmd.String(), err, out)
 	}
 
-	log.Printf("Getting Snippets for %s", entry)
-
 	scan := bufio.NewScanner(bytes.NewReader(out))
 	lineNumber := 0
 	for scan.Scan() {
 		if lineNumber >= 5 {
-			entry.Snippets = append(entry.Snippets, scan.Text())
+			splitScan := strings.SplitN(scan.Text(), ":", 2)
+			if len(splitScan) == 2 {
+				entry.Snippets = append(entry.Snippets, Snippet{Page: splitScan[0], Text: splitScan[1]})
+			}
 		}
 		lineNumber++
 	}

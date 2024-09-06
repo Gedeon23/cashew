@@ -14,7 +14,7 @@ The goal of this project is to offer a keyboard driven UI for recoll and integra
 
 ## In Progress Features
 
-- Snippets View
+- Snippets View (mostly done)
 
 ## Planned Features
 
@@ -43,8 +43,7 @@ go build .
 
 ### Needed Applications
 
-Of course you will need recoll installed and setup to use this application.
-~If you want to see snippets of the occurences inside the document, you will also need to install [ripgrep-all](https://github.com/phiresky/ripgrep-all)~ (snippets are now done through recoll)
+Right now the only requirement is recoll itself. I might add features in the future which are not accessible within the recoll cli.
 
 ---
 

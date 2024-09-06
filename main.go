@@ -5,7 +5,6 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/Gedeon23/cashew/entry"
 	"github.com/Gedeon23/cashew/recoll"
 	"github.com/Gedeon23/cashew/styles"
 
@@ -42,7 +41,7 @@ func newModel() model {
 	search.Width = 20
 
 	var results []list.Item
-	list := list.New(results, entry.NewEntryDelegate(), 0, 0)
+	list := list.New(results, NewEntryDelegate(), 0, 0)
 	list.SetFilteringEnabled(false)
 	list.SetShowTitle(false)
 	list.SetShowHelp(false)
@@ -177,8 +176,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.search.SetValue("")
 			case key.Matches(msg, m.keys.Help_QM):
 				m.ExpandHelp()
-			case key.Matches(msg, m.keys.OpenDocument):
-				m.OpenSelected()
+			// case key.Matches(msg, m.keys.OpenDocument):
+			// 	m.OpenSelected()
 			default:
 				m.details, cmd = m.details.Update(msg)
 				cmds = append(cmds, cmd)

@@ -1,6 +1,8 @@
 package main
 
 import (
+	"log"
+	"os/exec"
 	"strings"
 
 	"github.com/Gedeon23/cashew/recoll"
@@ -18,10 +20,11 @@ var centerStyle = lipgloss.NewStyle().
 	Align(lipgloss.Center)
 
 type Details struct {
-	Entry *recoll.Entry
-	Pager paginator.Model
-	Query string
-	Err   error
+	Entry           *recoll.Entry
+	SelectedSnippet int
+	Pager           paginator.Model
+	Query           string
+	Err             error
 }
 
 func NewDetails() Details {
@@ -32,10 +35,11 @@ func NewDetails() Details {
 	var entry *recoll.Entry
 
 	return Details{
-		Entry: entry,
-		Pager: pager,
-		Query: "",
-		Err:   nil,
+		Entry:           entry,
+		SelectedSnippet: 0,
+		Pager:           pager,
+		Query:           "",
+		Err:             nil,
 	}
 }
 
@@ -47,14 +51,41 @@ func (d Details) Update(msg tea.Msg) (Details, tea.Cmd) {
 	var cmds []tea.Cmd
 	var cmd tea.Cmd
 
-	switch msg.(type) {
+	switch msg := msg.(type) {
 	case SnippetsMsg:
-		d.Err = msg.(SnippetsMsg).Err
+		d.Err = msg.Err
 	case SwitchEntryMsg:
-		d.Entry = msg.(SwitchEntryMsg).NewEntry
+		d.Entry = msg.NewEntry
 		if d.Pager.Page == SnippetsPage && len(d.Entry.Snippets) == 0 {
 			cmd = GetSnipptets(d.Entry, d.Query)
 			cmds = append(cmds, cmd)
+			d.SelectedSnippet = 0
+		}
+	case tea.KeyMsg:
+		switch {
+		case msg.String() == "j":
+			d.SelectedSnippet++
+		case msg.String() == "k":
+			d.SelectedSnippet--
+		case msg.String() == "o":
+			if d.Pager.Page == SnippetsPage {
+				cmd := exec.Command("zathura", "--page="+strings.TrimSpace(d.Entry.Snippets[d.SelectedSnippet].Page), d.Entry.Url)
+				if err := cmd.Start(); err != nil {
+					log.Printf("Error: %v", err)
+				}
+			} else {
+				cmd := exec.Command("xdg-open", d.Entry.Url)
+				if err := cmd.Start(); err != nil {
+					log.Printf("Error: %v", err)
+				}
+			}
+		default:
+			d.Pager, cmd = d.Pager.Update(msg)
+			cmds = append(cmds, cmd)
+			if d.Pager.Page == SnippetsPage && len(d.Entry.Snippets) == 0 {
+				cmd = GetSnipptets(d.Entry, d.Query)
+				cmds = append(cmds, cmd)
+			}
 		}
 	default:
 		d.Pager, cmd = d.Pager.Update(msg)
@@ -82,8 +113,8 @@ func (d Details) View() string {
 			s.WriteString(d.Entry.View())
 		case SnippetsPage:
 			if len(d.Entry.Snippets) != 0 {
-				for _, snip := range d.Entry.Snippets {
-					s.WriteString(snip)
+				for i, snip := range d.Entry.Snippets {
+					s.WriteString(RenderSnippet(d.SelectedSnippet == i, i, snip))
 					s.WriteString("\n")
 				}
 			}

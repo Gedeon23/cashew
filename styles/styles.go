@@ -1,6 +1,7 @@
 package styles
 
 import (
+	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/lipgloss"
 )
 
@@ -11,3 +12,7 @@ var EntryField = lipgloss.NewStyle().
 	Foreground(lipgloss.Color("#FFFFFF")).
 	Padding(0, 1).
 	Bold(true)
+
+var Snippet = list.NewDefaultItemStyles()
+var SelectedSnippet = Snippet.SelectedTitle
+var NormalSnippet = Snippet.NormalTitle
