@@ -122,20 +122,24 @@ func RenderSnippet(query string, selected bool, index int, snippet recoll.Snippe
 	// 	text = text[:m.Width()-4] + "…"
 	// }
 
-	var text string
-	queryIndex := strings.Index(snippet.Text, query)
+	var match, before, after string
+	queryIndex := strings.Index(strings.ToLower(snippet.Text), strings.ToLower(query))
 	if queryIndex != -1 {
-		before := snippet.Text[:queryIndex]
-		after := snippet.Text[queryIndex+len(query):]
-		text = before + styles.SnippetMatch.Render(query) + after
+		if selected {
+			before = styles.SelectedSnippet.Render(" " + snippet.Page + " " + snippet.Text[:queryIndex])
+			after = styles.SelectedSnippetAfterMatch.Render(snippet.Text[queryIndex+len(query):])
+			match = styles.SnippetMatch.Render(snippet.Text[queryIndex : queryIndex+len(query)])
+		} else {
+			before = styles.NormalSnippet.Render(" " + snippet.Page + " " + snippet.Text[:queryIndex])
+			after = styles.NormalSnippetAfterMatch.Render(snippet.Text[queryIndex+len(query):])
+			match = styles.SnippetMatch.Render(snippet.Text[queryIndex : queryIndex+len(query)])
+		}
+		return before + match + after
 	} else {
-		text = snippet.Text
+		if selected {
+			return styles.SelectedSnippet.Render(" " + snippet.Page + " " + snippet.Text)
+		} else {
+			return styles.NormalSnippet.Render(" " + snippet.Page + " " + snippet.Text)
+		}
 	}
-
-	if selected {
-		text = styles.SelectedSnippet.Render(" "+snippet.Page+" ") + text
-	} else {
-		text = styles.NormalSnippet.Render(" "+snippet.Page+" ") + text
-	}
-	return text
 }

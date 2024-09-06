@@ -1,7 +1,6 @@
 package styles
 
 import (
-	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/lipgloss"
 )
 
@@ -13,9 +12,21 @@ var EntryField = lipgloss.NewStyle().
 	Padding(0, 1).
 	Bold(true)
 
-var Snippet = list.NewDefaultItemStyles()
-var SelectedSnippet = Snippet.SelectedTitle
-var NormalSnippet = Snippet.NormalTitle
+var SelectedSnippet = lipgloss.NewStyle().
+	Border(lipgloss.NormalBorder(), false, false, false, true).
+	BorderForeground(lipgloss.AdaptiveColor{Light: "#F793FF", Dark: "#AD58B4"}).
+	Foreground(lipgloss.AdaptiveColor{Light: "#EE6FF8", Dark: "#EE6FF8"}).
+	Padding(0, 0, 0, 1)
+
+var NormalSnippet = lipgloss.NewStyle().
+	Foreground(lipgloss.AdaptiveColor{Light: "#1a1a1a", Dark: "#dddddd"}).
+	Padding(0, 0, 0, 2)
+
+var SelectedSnippetAfterMatch = lipgloss.NewStyle().
+	Foreground(lipgloss.AdaptiveColor{Light: "#EE6FF8", Dark: "#EE6FF8"})
+
+var NormalSnippetAfterMatch = lipgloss.NewStyle().
+	Foreground(lipgloss.AdaptiveColor{Light: "#1a1a1a", Dark: "#dddddd"})
 
 var SnippetMatch = lipgloss.NewStyle().
 	Bold(true).
