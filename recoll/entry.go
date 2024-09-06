@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"github.com/Gedeon23/cashew/styles"
 	"strings"
-
-	tea "github.com/charmbracelet/bubbletea"
 )
 
 type Entry struct {
@@ -19,13 +17,13 @@ type Entry struct {
 
 func (e Entry) FilterValue() string { return "" + e.Url }
 
-func (m Entry) Init() tea.Cmd {
-	return nil
-}
+// func (m Entry) Init() tea.Cmd {
+// 	return nil
+// }
 
-func (m Entry) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	return m, nil
-}
+// func (m Entry) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+// 	return m, nil
+// }
 
 func (m Entry) View() string {
 	var s strings.Builder
