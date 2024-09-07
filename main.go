@@ -59,25 +59,18 @@ func newModel() model {
 	}
 }
 
-func (m *model) SetFocus(Focus int) {
-	if m.focus == FocusSearch && Focus != FocusSearch {
+func (m *model) SetFocus(focus int) {
+	if m.focus == FocusSearch && focus != FocusSearch {
 		m.search.Blur()
+	} else if m.focus == FocusDetail {
+		m.details.Focused = false
 	}
-	m.focus = Focus
-	m.keys.Focus = Focus
-	if Focus == FocusSearch {
+	m.focus = focus
+	m.keys.Focus = focus
+	if focus == FocusSearch {
 		m.search.Focus()
-	}
-}
-
-func (m *model) NextFocus() {
-	if m.focus == FocusSearch {
-		m.search.Blur()
-	}
-	m.focus = (m.focus + 1) % 3
-	m.keys.Focus = m.focus
-	if m.focus == FocusSearch {
-		m.search.Focus()
+	} else if focus == FocusDetail {
+		m.details.Focused = true
 	}
 }
 
@@ -123,13 +116,15 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch m.focus {
 		case FocusSearch:
 			switch {
-			case key.Matches(msg, m.keys.FocusNext):
-				m.NextFocus()
 			case key.Matches(msg, m.keys.ExecuteSearch):
 				if !(m.search.Value() == "") {
 					cmd = Collect(m.search.Value())
 					cmds = append(cmds, cmd)
 				}
+			case key.Matches(msg, m.keys.FocusResultsFromSearch):
+				m.SetFocus(FocusResults)
+			case key.Matches(msg, m.keys.FocusDetailsFromSearch):
+				m.SetFocus(FocusDetail)
 			case key.Matches(msg, m.keys.Quit_ESC):
 				return m, tea.Quit
 			case key.Matches(msg, m.keys.Help_QM):
@@ -140,8 +135,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		case FocusResults:
 			switch {
-			case key.Matches(msg, m.keys.FocusNext):
-				m.NextFocus()
+			case key.Matches(msg, m.keys.FocusDetails):
+				m.SetFocus(FocusDetail)
 			case key.Matches(msg, m.keys.Quit):
 				return m, tea.Quit
 			case key.Matches(msg, m.keys.FocusSearch):
@@ -163,8 +158,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		case FocusDetail:
 			switch {
-			case key.Matches(msg, m.keys.FocusNext):
-				m.NextFocus()
+			case key.Matches(msg, m.keys.FocusResults):
+				m.SetFocus(FocusResults)
 			case key.Matches(msg, m.keys.Quit):
 				return m, tea.Quit
 			case key.Matches(msg, m.keys.FocusSearch):

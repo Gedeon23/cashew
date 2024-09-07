@@ -29,12 +29,12 @@ func Collect(term string) []list.Item {
 	}
 
 	data := strings.Split(out.String(), "\n")
-	entries := make([]list.Item, 0, 20)
+	entries := make([]list.Item, 0, 16)
 
 	for i := 2; i < len(data)-1 && i <= cap(entries); i++ {
 
 		fields := strings.Split(data[i], " ")
-		entry := Entry{Query: term}
+		entry := Entry{Query: term, Snippets: make([]Snippet, 0, 8)}
 
 		url, err := base64.StdEncoding.DecodeString(fields[3])
 		if err != nil {
@@ -80,6 +80,7 @@ func GetSnipptets(entry *Entry, term string) error {
 	if err != nil {
 		return fmt.Errorf("Error in recoll query %s for snippets:\n %s\n %s", cmd.String(), err, out)
 	}
+	log.Printf("Getting Snippets for %s", entry)
 
 	scan := bufio.NewScanner(bytes.NewReader(out))
 	lineNumber := 0

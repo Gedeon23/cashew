@@ -4,6 +4,12 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
+var FocusedForeground = lipgloss.AdaptiveColor{Light: "#EE6FF8", Dark: "#EE6FF8"}
+var SelectedForeground = lipgloss.AdaptiveColor{Light: "#1a1a1a", Dark: "#eeeeee"}
+var NormalForeground = lipgloss.AdaptiveColor{Light: "#3a3a3a", Dark: "#bbbbbb"}
+
+// TODO cleanup colors into vars
+
 var Root = lipgloss.NewStyle().Margin(1, 2)
 
 var EntryField = lipgloss.NewStyle().
@@ -15,7 +21,7 @@ var EntryField = lipgloss.NewStyle().
 var SelectedSnippet = lipgloss.NewStyle().
 	Border(lipgloss.NormalBorder(), false, false, false, true).
 	BorderForeground(lipgloss.AdaptiveColor{Light: "#F793FF", Dark: "#AD58B4"}).
-	Foreground(lipgloss.AdaptiveColor{Light: "#EE6FF8", Dark: "#EE6FF8"}).
+	Foreground(SelectedForeground).
 	Padding(0, 0, 0, 1)
 
 var NormalSnippet = lipgloss.NewStyle().
@@ -32,3 +38,14 @@ var SnippetMatch = lipgloss.NewStyle().
 	Bold(true).
 	Background(lipgloss.Color("#FF0000")).
 	Foreground(lipgloss.Color("#FFFFFF"))
+
+var SelectedTab = lipgloss.NewStyle().
+	Bold(true).
+	Foreground(SelectedForeground)
+
+var NormalTab = lipgloss.NewStyle().
+	Foreground(NormalForeground)
+
+var FocusedTab = lipgloss.NewStyle().
+	Bold(true).
+	Foreground(FocusedForeground)

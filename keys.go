@@ -5,24 +5,27 @@ import (
 )
 
 type KeyMap struct {
-	Focus               int
-	Quit                key.Binding
-	Quit_ESC            key.Binding
-	Help                key.Binding
-	Help_QM             key.Binding
-	ExecuteSearch       key.Binding
-	NextEntry           key.Binding
-	PrevEntry           key.Binding
-	FocusNext           key.Binding
-	FocusSearch         key.Binding
-	FocusSearchAndClear key.Binding
-	OpenDocument        key.Binding
+	Focus                  int
+	Quit                   key.Binding
+	Quit_ESC               key.Binding
+	Help                   key.Binding
+	Help_QM                key.Binding
+	ExecuteSearch          key.Binding
+	NextEntry              key.Binding
+	PrevEntry              key.Binding
+	FocusSearch            key.Binding
+	FocusSearchAndClear    key.Binding
+	FocusResults           key.Binding
+	FocusResultsFromSearch key.Binding
+	FocusDetails           key.Binding
+	FocusDetailsFromSearch key.Binding
+	OpenDocument           key.Binding
 }
 
 func (k KeyMap) ShortHelp() []key.Binding {
 	switch k.Focus {
 	case FocusSearch:
-		return []key.Binding{k.Quit_ESC, k.Help_QM, k.FocusNext}
+		return []key.Binding{k.Quit_ESC, k.Help_QM, k.FocusDetails, k.FocusResults}
 	case FocusResults:
 		return []key.Binding{k.Quit, k.Help, k.NextEntry, k.PrevEntry, k.OpenDocument, k.FocusSearch}
 	case FocusDetail:
@@ -37,22 +40,22 @@ func (k KeyMap) FullHelp() [][]key.Binding {
 	case FocusSearch:
 		return [][]key.Binding{
 			{k.ExecuteSearch},
-			{k.Quit_ESC, k.Help_QM, k.FocusNext},
+			{k.Quit_ESC, k.Help_QM, k.FocusDetails, k.FocusResults},
 		}
 	case FocusResults:
 		return [][]key.Binding{
-			{k.OpenDocument, k.FocusSearch, k.FocusSearchAndClear, k.FocusNext},
+			{k.OpenDocument, k.FocusSearch, k.FocusSearchAndClear, k.FocusDetails},
 			{k.Quit, k.Help, k.NextEntry, k.PrevEntry},
 		}
 	case FocusDetail:
 		return [][]key.Binding{
-			{k.FocusSearch, k.FocusSearchAndClear, k.FocusNext},
+			{k.FocusSearch, k.FocusSearchAndClear, k.FocusResults},
 			{k.Quit, k.Help},
 		}
 	default:
 		return [][]key.Binding{
 			{k.FocusSearch, k.ExecuteSearch, k.NextEntry, k.PrevEntry},
-			{k.FocusNext, k.Quit, k.Help},
+			{k.FocusResults, k.FocusDetails, k.Quit, k.Help},
 		}
 	}
 }
@@ -83,6 +86,22 @@ func NewDefaultKeyMap() KeyMap {
 			key.WithKeys("F"),
 			key.WithHelp("F", "new search"),
 		),
+		FocusResults: key.NewBinding(
+			key.WithKeys("s", "ctrl+s"),
+			key.WithHelp("s", "focus results"),
+		),
+		FocusResultsFromSearch: key.NewBinding(
+			key.WithKeys("ctrl+s"),
+			key.WithHelp("ctrl+s", "focus results"),
+		),
+		FocusDetails: key.NewBinding(
+			key.WithKeys("g", "ctrl+g"),
+			key.WithHelp("g", "focus detail"),
+		),
+		FocusDetailsFromSearch: key.NewBinding(
+			key.WithKeys("ctrl+g"),
+			key.WithHelp("ctrl+g", "focus detail"),
+		),
 		ExecuteSearch: key.NewBinding(
 			key.WithKeys("enter"),
 			key.WithHelp("enter", "execute search"),
@@ -94,10 +113,6 @@ func NewDefaultKeyMap() KeyMap {
 		PrevEntry: key.NewBinding(
 			key.WithKeys("k", "ctrl+p"),
 			key.WithHelp("k", "previous"),
-		),
-		FocusNext: key.NewBinding(
-			key.WithKeys("tab"),
-			key.WithHelp("TAB", "focus next"),
 		),
 		OpenDocument: key.NewBinding(
 			key.WithKeys("o"),

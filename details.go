@@ -6,37 +6,33 @@ import (
 	"strings"
 
 	"github.com/Gedeon23/cashew/recoll"
-	"github.com/charmbracelet/bubbles/paginator"
+	"github.com/Gedeon23/cashew/styles"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
 )
 
 const (
-	MetaPage = iota
-	SnippetsPage
+	MetaTab = iota
+	SnippetsTab
 )
 
-var centerStyle = lipgloss.NewStyle().
-	Align(lipgloss.Center)
-
 type Details struct {
+	Tabs            []string
+	TabIndex        int
+	Focused         bool
 	Entry           *recoll.Entry
 	SelectedSnippet int
-	Pager           paginator.Model
 	Err             error
 }
 
 func NewDetails() Details {
-	pager := paginator.New()
-	pager.Type = paginator.Dots
-	pager.PerPage = 1
-	pager.TotalPages = 2
 	var entry *recoll.Entry
 
 	return Details{
+		Tabs:            []string{"Metadata", "Snippets"},
+		TabIndex:        0,
+		Focused:         false,
 		Entry:           entry,
 		SelectedSnippet: 0,
-		Pager:           pager,
 		Err:             nil,
 	}
 }
@@ -54,7 +50,7 @@ func (d Details) Update(msg tea.Msg) (Details, tea.Cmd) {
 		d.Err = msg.Err
 	case SwitchEntryMsg:
 		d.Entry = msg.NewEntry
-		if d.Pager.Page == SnippetsPage && len(d.Entry.Snippets) == 0 {
+		if d.TabIndex == SnippetsTab && len(d.Entry.Snippets) == 0 {
 			cmd = GetSnipptets(d.Entry, d.Entry.Query)
 			cmds = append(cmds, cmd)
 			d.SelectedSnippet = 0
@@ -70,7 +66,7 @@ func (d Details) Update(msg tea.Msg) (Details, tea.Cmd) {
 				d.SelectedSnippet--
 			}
 		case msg.String() == "o":
-			if d.Pager.Page == SnippetsPage {
+			if d.TabIndex == SnippetsTab {
 				cmd := exec.Command("zathura", "--page="+strings.TrimSpace(d.Entry.Snippets[d.SelectedSnippet].Page), d.Entry.Url)
 				if err := cmd.Start(); err != nil {
 					log.Printf("Error: %v", err)
@@ -81,18 +77,20 @@ func (d Details) Update(msg tea.Msg) (Details, tea.Cmd) {
 					log.Printf("Error: %v", err)
 				}
 			}
+		case msg.String() == "tab":
+			d.TabIndex = (d.TabIndex + 1) % len(d.Tabs)
+			if d.TabIndex == SnippetsTab && len(d.Entry.Snippets) == 0 {
+				cmd = GetSnipptets(d.Entry, d.Entry.Query)
+				cmds = append(cmds, cmd)
+			}
 		default:
-			d.Pager, cmd = d.Pager.Update(msg)
-			cmds = append(cmds, cmd)
-			if d.Pager.Page == SnippetsPage && len(d.Entry.Snippets) == 0 {
+			if d.TabIndex == SnippetsTab && len(d.Entry.Snippets) == 0 {
 				cmd = GetSnipptets(d.Entry, d.Entry.Query)
 				cmds = append(cmds, cmd)
 			}
 		}
 	default:
-		d.Pager, cmd = d.Pager.Update(msg)
-		cmds = append(cmds, cmd)
-		if d.Pager.Page == SnippetsPage && len(d.Entry.Snippets) == 0 {
+		if d.TabIndex == SnippetsTab && len(d.Entry.Snippets) == 0 {
 			cmd = GetSnipptets(d.Entry, d.Entry.Query)
 			cmds = append(cmds, cmd)
 		}
@@ -107,13 +105,22 @@ func (d Details) View() string {
 	}
 
 	var s strings.Builder
-	s.WriteString(centerStyle.Render(d.Pager.View()))
+	s.WriteString("\n\n")
+	for i, tab := range d.Tabs {
+		if i == d.TabIndex && d.Focused {
+			s.WriteString(styles.FocusedTab.Render(tab) + "  ")
+		} else if i == d.TabIndex {
+			s.WriteString(styles.SelectedTab.Render(tab) + "  ")
+		} else {
+			s.WriteString(styles.NormalTab.Render(tab) + "  ")
+		}
+	}
 	s.WriteString("\n\n")
 	if d.Entry != nil {
-		switch d.Pager.Page {
-		case MetaPage:
+		switch d.TabIndex {
+		case MetaTab:
 			s.WriteString(d.Entry.View())
-		case SnippetsPage:
+		case SnippetsTab:
 			if len(d.Entry.Snippets) != 0 {
 				for i, snip := range d.Entry.Snippets {
 					s.WriteString(RenderSnippet(d.Entry.Query, d.SelectedSnippet == i, i, snip))
