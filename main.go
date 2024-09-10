@@ -23,13 +23,14 @@ const (
 )
 
 type model struct {
-	search  textinput.Model
-	list    list.Model
-	keys    KeyMap
-	help    help.Model
-	focus   int
-	details Details
-	err     error
+	search     textinput.Model
+	list       list.Model
+	keys       KeyMap
+	help       help.Model
+	docViewers map[string]string
+	focus      int
+	details    Details
+	err        error
 }
 
 func newModel() model {
@@ -104,7 +105,7 @@ func (m *model) OpenSelected() {
 }
 
 func (m model) Init() tea.Cmd {
-	return nil
+	return GetDocViewers()
 }
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -192,6 +193,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case SnippetsMsg:
 		m.details, cmd = m.details.Update(msg)
 		cmds = append(cmds, cmd)
+	case DocViewerMsg:
+		m.docViewers = msg.Viewers
 	}
 
 	return m, tea.Batch(cmds...)
@@ -207,6 +210,7 @@ func (m model) View() string {
 			lipgloss.JoinHorizontal(0,
 				lipgloss.JoinVertical(0,
 					m.search.View(),
+					m.docViewers["application/pdf"],
 					"\n",
 					m.list.View(),
 				),
