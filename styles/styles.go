@@ -18,21 +18,34 @@ var EntryField = lipgloss.NewStyle().
 	Padding(0, 1).
 	Bold(true)
 
+var FocusedSnippet = lipgloss.NewStyle().
+	Border(lipgloss.NormalBorder(), false, false, false, true).
+	BorderForeground(FocusedForeground).
+	Foreground(FocusedForeground).
+	Padding(0, 0, 0, 1).
+	Bold(true)
+
 var SelectedSnippet = lipgloss.NewStyle().
 	Border(lipgloss.NormalBorder(), false, false, false, true).
 	BorderForeground(lipgloss.AdaptiveColor{Light: "#F793FF", Dark: "#AD58B4"}).
 	Foreground(SelectedForeground).
-	Padding(0, 0, 0, 1)
+	Padding(0, 0, 0, 1).
+	Bold(true)
 
 var NormalSnippet = lipgloss.NewStyle().
 	Foreground(lipgloss.AdaptiveColor{Light: "#1a1a1a", Dark: "#dddddd"}).
 	Padding(0, 0, 0, 2)
 
+var FocusedSnippetAfterMatch = lipgloss.NewStyle().
+	Foreground(FocusedForeground).
+	Bold(true)
+
 var SelectedSnippetAfterMatch = lipgloss.NewStyle().
-	Foreground(lipgloss.AdaptiveColor{Light: "#EE6FF8", Dark: "#EE6FF8"})
+	Foreground(SelectedForeground).
+	Bold(true)
 
 var NormalSnippetAfterMatch = lipgloss.NewStyle().
-	Foreground(lipgloss.AdaptiveColor{Light: "#1a1a1a", Dark: "#dddddd"})
+	Foreground(NormalForeground)
 
 var SnippetMatch = lipgloss.NewStyle().
 	Bold(true).

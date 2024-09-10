@@ -123,7 +123,7 @@ func (d Details) View() string {
 		case SnippetsTab:
 			if len(d.Entry.Snippets) != 0 {
 				for i, snip := range d.Entry.Snippets {
-					s.WriteString(RenderSnippet(d.Entry.Query, d.SelectedSnippet == i, i, snip))
+					s.WriteString(RenderSnippet(d.Entry.Query, d.Focused, d.SelectedSnippet == i, i, snip))
 					s.WriteString("\n")
 				}
 			}
