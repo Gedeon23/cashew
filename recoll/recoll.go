@@ -5,11 +5,12 @@ import (
 	"bytes"
 	"encoding/base64"
 	"fmt"
-	"github.com/charmbracelet/bubbles/list"
 	"log"
 	"os/exec"
 	"path/filepath"
 	"strings"
+
+	"github.com/charmbracelet/bubbles/list"
 )
 
 func Collect(term string) []list.Item {
@@ -65,6 +66,8 @@ func Collect(term string) []list.Item {
 			entry.DocTitle = string(title)
 		}
 
+		entry.Snippets = make([]Snippet, 0, 10)
+
 		entries = append(entries, entry)
 	}
 
@@ -72,13 +75,13 @@ func Collect(term string) []list.Item {
 	return entries
 }
 
-func GetSnipptets(entry *Entry, term string) error {
+func GetSnipptets(entry Entry, term string) (Entry, error) {
 	query := fmt.Sprintf("%s dir:\"%s\" filename:\"%s\"", term, filepath.Dir(entry.Url[7:]), entry.File)
 	cmd := exec.Command("recoll", "-t", "-A", "-p 12", query)
 
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		return fmt.Errorf("Error in recoll query %s for snippets:\n %s\n %s", cmd.String(), err, out)
+		return entry, fmt.Errorf("Error in recoll query %s for snippets:\n %s\n %s", cmd.String(), err, out)
 	}
 	log.Printf("Getting Snippets for %s", entry)
 
@@ -94,5 +97,5 @@ func GetSnipptets(entry *Entry, term string) error {
 		lineNumber++
 	}
 
-	return nil
+	return entry, nil
 }

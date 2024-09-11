@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"log"
 	"os/exec"
 	"strings"
@@ -19,20 +20,31 @@ import (
 const (
 	FocusSearch = iota
 	FocusResults
-	FocusDetail
+	FocusDetails
+)
+
+const (
+	MetaTab = iota
+	SnippetsTab
 )
 
 type model struct {
-	search     textinput.Model
-	list       list.Model
-	keys       KeyMap
-	help       help.Model
-	docViewers map[string]string
-	focus      int
-	details    Details
-	err        error
+	Search        textinput.Model
+	Results       list.Model
+	Tabs          []string
+	SelectedEntry recoll.Entry
+
+	Keys       GlobalKeyMap
+	Help       help.Model
+	DocViewers map[string]string
+
+	SelectedTab     int
+	Focus           int
+	SelectedSnippet int
+	Err             error
 }
 
+// Create Initial Model for Application
 func newModel() model {
 	search := textinput.New()
 	search.Placeholder = "search…"
@@ -41,60 +53,75 @@ func newModel() model {
 	search.CharLimit = 200
 	search.Width = 20
 
-	var results []list.Item
-	list := list.New(results, NewEntryDelegate(), 0, 0)
-	list.SetFilteringEnabled(false)
-	list.SetShowTitle(false)
-	list.SetShowHelp(false)
+	var container []list.Item
+	results := list.New(container, NewEntryDelegate(), 0, 0)
+	results.SetFilteringEnabled(false)
+	results.SetShowTitle(false)
+	results.SetShowHelp(false)
 
-	keys := NewDefaultKeyMap()
+	keys := NewGlobalKeyMap()
 	help := help.New()
 
-	details := NewDetails()
 	return model{
-		search:  search,
-		list:    list,
-		keys:    keys,
-		help:    help,
-		details: details,
+		Search:  search,
+		Results: results,
+		Tabs:    []string{"Metadata", "Snippets"},
+
+		Keys: keys,
+		Help: help,
+
+		SelectedTab:     0,
+		Focus:           FocusSearch,
+		SelectedSnippet: 0,
 	}
 }
 
-func (m *model) SetFocus(focus int) {
-	if m.focus == FocusSearch && focus != FocusSearch {
-		m.search.Blur()
-	} else if m.focus == FocusDetail {
-		m.details.Focused = false
-	}
-	m.focus = focus
-	m.keys.Focus = focus
-	if focus == FocusSearch {
-		m.search.Focus()
-	} else if focus == FocusDetail {
-		m.details.Focused = true
-	}
+// Set's application focus on search panel
+// Keyboard input will be directed to this part of the application
+func (m *model) FocusSearch() {
+	m.Focus = FocusSearch
+	m.Keys.Focus = FocusSearch
+	m.Search.Focus()
 }
 
-func (m *model) UpdateDetails() {
-	selected := m.list.SelectedItem()
-	switch selected := selected.(type) {
-	case recoll.Entry:
-		m.details.Update(SwitchEntryMsg{NewEntry: &selected})
+// Set's application focus on results panel
+// Keyboard input will be directed to this part of the application
+func (m *model) FocusResults() {
+	if m.Focus == FocusSearch {
+		m.Search.Blur()
+	}
+	m.Focus = FocusResults
+	m.Keys.Focus = FocusResults
+}
+
+// Set's application focus on details panel (whichever tab is currently active)
+// Keyboard input will be directed to this part of the application
+func (m *model) FocusDetails() {
+	if m.Focus == FocusSearch {
+		m.Search.Blur()
+	}
+	m.Focus = FocusDetails
+	m.Keys.Focus = FocusDetails
+}
+
+func (m *model) UpdateSelectedEntry() {
+	if entry, ok := m.Results.SelectedItem().(recoll.Entry); ok {
+		m.SelectedEntry = entry
 	}
 }
 
 func (m *model) ExpandHelp() {
-	prevHeight := strings.Count(m.help.View(m.keys), "\n")
-	m.help.ShowAll = !m.help.ShowAll
-	newHeight := strings.Count(m.help.View(m.keys), "\n")
-	m.list.SetSize(
-		m.list.Width(),
-		m.list.Height()-(newHeight-prevHeight),
+	prevHeight := strings.Count(m.Help.View(m.Keys), "\n")
+	m.Help.ShowAll = !m.Help.ShowAll
+	newHeight := strings.Count(m.Help.View(m.Keys), "\n")
+	m.Results.SetSize(
+		m.Results.Width(),
+		m.Results.Height()-(newHeight-prevHeight),
 	)
 }
 
 func (m *model) OpenSelected() {
-	selected := m.list.SelectedItem()
+	selected := m.Results.SelectedItem()
 	if selected, ok := selected.(recoll.Entry); ok {
 		cmd := exec.Command("xdg-open", selected.Url)
 
@@ -114,109 +141,159 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		switch m.focus {
-		case FocusSearch:
-			switch {
-			case key.Matches(msg, m.keys.ExecuteSearch):
-				if !(m.search.Value() == "") {
-					cmd = Collect(m.search.Value())
+		if key.Matches(msg, m.Keys.NextTab) {
+			m.SelectedTab += 1
+			m.SelectedTab %= len(m.Tabs)
+			m.Keys.SelectedTab = m.SelectedTab
+			m.UpdateSelectedEntry()
+			if m.SelectedTab == SnippetsTab && len(m.SelectedEntry.Snippets) == 0 {
+				cmds = append(cmds, GetSnipptets(m.SelectedEntry, m.Search.Value()))
+			}
+		} else {
+			switch m.Focus {
+			case FocusSearch:
+				switch {
+				case key.Matches(msg, m.Keys.ExecuteSearch):
+					if !(m.Search.Value() == "") {
+						cmd = Collect(m.Search.Value())
+						cmds = append(cmds, cmd)
+					}
+				case key.Matches(msg, m.Keys.FocusResultsFromSearch):
+					m.FocusResults()
+				case key.Matches(msg, m.Keys.FocusDetailsFromSearch):
+					m.FocusDetails()
+				case key.Matches(msg, m.Keys.Quit_ESC):
+					return m, tea.Quit
+				case key.Matches(msg, m.Keys.Help_QM):
+					m.ExpandHelp()
+				default:
+					m.Search, cmd = m.Search.Update(msg)
 					cmds = append(cmds, cmd)
 				}
-			case key.Matches(msg, m.keys.FocusResultsFromSearch):
-				m.SetFocus(FocusResults)
-			case key.Matches(msg, m.keys.FocusDetailsFromSearch):
-				m.SetFocus(FocusDetail)
-			case key.Matches(msg, m.keys.Quit_ESC):
-				return m, tea.Quit
-			case key.Matches(msg, m.keys.Help_QM):
-				m.ExpandHelp()
-			default:
-				m.search, cmd = m.search.Update(msg)
-				cmds = append(cmds, cmd)
-			}
-		case FocusResults:
-			switch {
-			case key.Matches(msg, m.keys.FocusDetails):
-				m.SetFocus(FocusDetail)
-			case key.Matches(msg, m.keys.Quit):
-				return m, tea.Quit
-			case key.Matches(msg, m.keys.FocusSearch):
-				m.SetFocus(FocusSearch)
-			case key.Matches(msg, m.keys.FocusSearchAndClear):
-				m.SetFocus(FocusSearch)
-				m.search.SetValue("")
-			case key.Matches(msg, m.keys.Help):
-				m.ExpandHelp()
-			case key.Matches(msg, m.keys.OpenDocument):
-				m.OpenSelected()
-			default:
-				m.list, cmd = m.list.Update(msg)
-				cmds = append(cmds, cmd)
-				if entry, ok := m.list.SelectedItem().(recoll.Entry); ok {
-					m.details, cmd = m.details.Update(SwitchEntryMsg{NewEntry: &entry})
+			case FocusResults:
+				switch {
+				case key.Matches(msg, m.Keys.FocusDetails):
+					m.FocusDetails()
+				case key.Matches(msg, m.Keys.Quit):
+					return m, tea.Quit
+				case key.Matches(msg, m.Keys.FocusSearch):
+					m.FocusSearch()
+				case key.Matches(msg, m.Keys.FocusSearchAndClear):
+					m.FocusSearch()
+					m.Search.SetValue("")
+				case key.Matches(msg, m.Keys.Help):
+					m.ExpandHelp()
+				case key.Matches(msg, m.Keys.OpenDocument):
+					m.OpenSelected()
+				default:
+					m.Results, cmd = m.Results.Update(msg)
 					cmds = append(cmds, cmd)
+					m.UpdateSelectedEntry()
+					if m.SelectedTab == SnippetsTab && len(m.SelectedEntry.Snippets) == 0 {
+						cmds = append(cmds, GetSnipptets(m.SelectedEntry, m.Search.Value()))
+					}
 				}
-			}
-		case FocusDetail:
-			switch {
-			case key.Matches(msg, m.keys.FocusResults):
-				m.SetFocus(FocusResults)
-			case key.Matches(msg, m.keys.Quit):
-				return m, tea.Quit
-			case key.Matches(msg, m.keys.FocusSearch):
-				m.SetFocus(FocusSearch)
-			case key.Matches(msg, m.keys.FocusSearchAndClear):
-				m.SetFocus(FocusSearch)
-				m.search.SetValue("")
-			case key.Matches(msg, m.keys.Help_QM):
-				m.ExpandHelp()
-			// case key.Matches(msg, m.keys.OpenDocument):
-			// 	m.OpenSelected()
-			default:
-				m.details, cmd = m.details.Update(msg)
-				cmds = append(cmds, cmd)
+			case FocusDetails:
+				switch {
+				case key.Matches(msg, m.Keys.FocusResults):
+					m.FocusResults()
+				case key.Matches(msg, m.Keys.Quit):
+					return m, tea.Quit
+				case key.Matches(msg, m.Keys.FocusSearch):
+					m.FocusSearch()
+				case key.Matches(msg, m.Keys.FocusSearchAndClear):
+					m.FocusSearch()
+					m.Search.SetValue("")
+				case key.Matches(msg, m.Keys.Help_QM):
+					m.ExpandHelp()
+					// case key.Matches(msg, m.keys.OpenDocument):
+					// 	m.OpenSelected()
+					// default:
+					// 	m.details, cmd = m.details.Update(msg)
+					// 	cmds = append(cmds, cmd)
+				case key.Matches(msg, m.Keys.NextSnippet):
+					if m.SelectedSnippet < len(m.SelectedEntry.Snippets)-1 {
+						m.SelectedSnippet++
+					}
+				case key.Matches(msg, m.Keys.PrevSnippet):
+					if m.SelectedSnippet > 0 {
+						m.SelectedSnippet--
+					}
+				}
 			}
 		}
 	case tea.WindowSizeMsg:
 		h, v := styles.Root.GetFrameSize()
-		m.list.SetSize(
+		m.Results.SetSize(
 			msg.Width/2-h,
 			msg.Height-v-5,
 		)
 	case CollectMsg:
-		m.list.SetItems(msg.Results)
-		m.SetFocus(FocusResults)
-		if entry, ok := m.list.SelectedItem().(recoll.Entry); ok {
-			m.details, cmd = m.details.Update(SwitchEntryMsg{NewEntry: &entry})
-			cmds = append(cmds, cmd)
-		}
+		m.Results.SetItems(msg.Results)
+		m.FocusResults()
 	case SnippetsMsg:
-		m.details, cmd = m.details.Update(msg)
-		cmds = append(cmds, cmd)
+		m.Err = msg.Err
+		if msg.Entry.Url == m.SelectedEntry.Url {
+			m.Results.SetItem(m.Results.Index(), msg.Entry)
+		}
 	case DocViewerMsg:
-		m.docViewers = msg.Viewers
+		m.DocViewers = msg.Viewers
 	}
 
 	return m, tea.Batch(cmds...)
 }
 
+// Returns application view
 func (m model) View() string {
-	if m.err != nil {
-		return "\n\nError: " + m.err.Error()
+	if m.Err != nil {
+		return "\n\nError: " + m.Err.Error()
 	}
 
+	entry, ok := m.Results.SelectedItem().(recoll.Entry)
+	if !ok {
+		m.Err = errors.New("Wrong entry type")
+	}
+
+	// Details View
+	// Switch between MetaData View and Snippets View (might add Annotations eventually)
+	var details strings.Builder
+
+	for i, tab := range m.Tabs {
+		switch {
+		case m.Focus == FocusDetails && m.SelectedTab == i:
+			details.WriteString(styles.FocusedTab.Render(tab) + "  ")
+		case m.SelectedTab == i:
+			details.WriteString(styles.SelectedTab.Render(tab) + "  ")
+		default:
+			details.WriteString(styles.NormalTab.Render(tab) + "  ")
+		}
+	}
+	details.WriteString("\n\n")
+
+	switch m.SelectedTab {
+	case MetaTab:
+		details.WriteString(entry.View())
+	case SnippetsTab:
+		if len(entry.Snippets) != 0 {
+			for i, snip := range entry.Snippets {
+				details.WriteString(RenderSnippet(entry.Query, m.Focus == FocusDetails, m.SelectedSnippet == i, i, snip))
+				details.WriteString("\n")
+			}
+		}
+	}
+
+	// Putting everything together
+	//
 	return styles.Root.Render(
 		lipgloss.JoinVertical(0,
+			m.Search.View(),
+			"\n",
 			lipgloss.JoinHorizontal(0,
-				lipgloss.JoinVertical(0,
-					m.search.View(),
-					m.docViewers["application/pdf"],
-					"\n",
-					m.list.View(),
-				),
-				m.details.View(),
+				m.DocViewers["application/pdf"],
+				m.Results.View(),
+				details.String(),
 			),
-			m.help.View(m.keys),
+			m.Help.View(m.Keys),
 		))
 }
 

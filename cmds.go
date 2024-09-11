@@ -21,12 +21,14 @@ func Collect(term string) tea.Cmd {
 }
 
 type SnippetsMsg struct {
-	Err error
+	Entry recoll.Entry
+	Err   error
 }
 
-func GetSnipptets(entry *recoll.Entry, term string) tea.Cmd {
+func GetSnipptets(entry recoll.Entry, term string) tea.Cmd {
 	return func() tea.Msg {
-		return SnippetsMsg{Err: recoll.GetSnipptets(entry, term)}
+		entryWithSnippets, err := recoll.GetSnipptets(entry, term)
+		return SnippetsMsg{Entry: entryWithSnippets, Err: err}
 	}
 }
 

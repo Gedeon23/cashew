@@ -4,13 +4,15 @@ import (
 	"github.com/charmbracelet/bubbles/key"
 )
 
-type KeyMap struct {
+type GlobalKeyMap struct {
 	Focus                  int
+	SelectedTab            int
 	Quit                   key.Binding
 	Quit_ESC               key.Binding
 	Help                   key.Binding
 	Help_QM                key.Binding
 	ExecuteSearch          key.Binding
+	NextTab                key.Binding
 	NextEntry              key.Binding
 	PrevEntry              key.Binding
 	FocusSearch            key.Binding
@@ -20,22 +22,25 @@ type KeyMap struct {
 	FocusDetails           key.Binding
 	FocusDetailsFromSearch key.Binding
 	OpenDocument           key.Binding
+	NextSnippet            key.Binding
+	PrevSnippet            key.Binding
+	OpenSnippet            key.Binding
 }
 
-func (k KeyMap) ShortHelp() []key.Binding {
+func (k GlobalKeyMap) ShortHelp() []key.Binding {
 	switch k.Focus {
 	case FocusSearch:
 		return []key.Binding{k.Quit_ESC, k.Help_QM, k.FocusDetails, k.FocusResults}
 	case FocusResults:
 		return []key.Binding{k.Quit, k.Help, k.NextEntry, k.PrevEntry, k.OpenDocument, k.FocusSearch}
-	case FocusDetail:
+	case FocusDetails:
 		return []key.Binding{k.Quit, k.Help, k.FocusSearch}
 	default:
 		return []key.Binding{k.Quit, k.FocusSearch, k.Help}
 	}
 }
 
-func (k KeyMap) FullHelp() [][]key.Binding {
+func (k GlobalKeyMap) FullHelp() [][]key.Binding {
 	switch k.Focus {
 	case FocusSearch:
 		return [][]key.Binding{
@@ -47,10 +52,17 @@ func (k KeyMap) FullHelp() [][]key.Binding {
 			{k.OpenDocument, k.FocusSearch, k.FocusSearchAndClear, k.FocusDetails},
 			{k.Quit, k.Help, k.NextEntry, k.PrevEntry},
 		}
-	case FocusDetail:
-		return [][]key.Binding{
-			{k.FocusSearch, k.FocusSearchAndClear, k.FocusResults},
-			{k.Quit, k.Help},
+	case FocusDetails:
+		if k.SelectedTab == SnippetsTab {
+			return [][]key.Binding{
+				{k.FocusSearch, k.FocusResults, k.PrevSnippet},
+				{k.Quit, k.Help, k.OpenSnippet, k.NextSnippet},
+			}
+		} else {
+			return [][]key.Binding{
+				{k.FocusSearch, k.FocusSearchAndClear, k.FocusResults},
+				{k.Quit, k.Help},
+			}
 		}
 	default:
 		return [][]key.Binding{
@@ -60,8 +72,8 @@ func (k KeyMap) FullHelp() [][]key.Binding {
 	}
 }
 
-func NewDefaultKeyMap() KeyMap {
-	return KeyMap{
+func NewGlobalKeyMap() GlobalKeyMap {
+	return GlobalKeyMap{
 		Quit: key.NewBinding(
 			key.WithKeys("q", "esc"),
 			key.WithHelp("q/esc", "quit"),
@@ -77,6 +89,10 @@ func NewDefaultKeyMap() KeyMap {
 		Help_QM: key.NewBinding(
 			key.WithKeys("?"),
 			key.WithHelp("?", "help"),
+		),
+		NextTab: key.NewBinding(
+			key.WithKeys("tab"),
+			key.WithHelp("tab", "next tab"),
 		),
 		FocusSearch: key.NewBinding(
 			key.WithKeys("f", "ctrl+f", "/"),
@@ -117,6 +133,18 @@ func NewDefaultKeyMap() KeyMap {
 		OpenDocument: key.NewBinding(
 			key.WithKeys("o"),
 			key.WithHelp("o", "open doc"),
+		),
+		NextSnippet: key.NewBinding(
+			key.WithKeys("j", "ctrl+n"),
+			key.WithHelp("j", "next snippet"),
+		),
+		PrevSnippet: key.NewBinding(
+			key.WithKeys("k", "ctrl+p"),
+			key.WithHelp("k", "prev snippet"),
+		),
+		OpenSnippet: key.NewBinding(
+			key.WithKeys("o"),
+			key.WithHelp("o", "open snippet"),
 		),
 	}
 }
