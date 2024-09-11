@@ -11,10 +11,8 @@ The goal of this project is to offer a keyboard driven UI for recoll and integra
 - easy keyboard driven navigation
 - Detail View for each entry
 - easily open the entry in your preferred pdf viewer
-
-## In Progress Features
-
-- Snippets View (mostly done)
+- Snippets View
+- Open pdf at snippet location (currently only supporting zathura)
 
 ## Planned Features
 
