@@ -1,7 +1,7 @@
 package main
 
 import (
-	"errors"
+	"fmt"
 	"log"
 	"os/exec"
 	"strconv"
@@ -42,6 +42,7 @@ type model struct {
 
 	SelectedTab     int
 	Focus           int
+	PrevFocus       int
 	SelectedSnippet int
 	Err             error
 }
@@ -78,40 +79,22 @@ func newModel() model {
 	}
 }
 
-// Set's application focus on search panel
+// Set's application focus (if details whichever tab is currently active)
 // Keyboard input will be directed to this part of the application
-func (m *model) FocusSearch() {
-	m.Focus = FocusSearch
-	m.Keys.Focus = FocusSearch
-	m.Search.Focus()
-}
 
-// Set's application focus on results panel
-// Keyboard input will be directed to this part of the application
-func (m *model) FocusResults() {
-	if m.Focus == FocusSearch {
-		m.Search.Blur()
+func (m *model) SetFocus(focus int) {
+	if m.Focus != focus {
+		if m.Focus == FocusSearch {
+			m.Search.Blur()
+		}
+		m.PrevFocus = m.Focus
+		m.Focus = focus
+		log.Printf("Set Focus %d", focus)
+		m.Keys.Focus = focus
+		if m.Focus == FocusSearch {
+			m.Search.Focus()
+		}
 	}
-	m.Focus = FocusResults
-	m.Keys.Focus = FocusResults
-}
-
-// Set's application focus on details panel (whichever tab is currently active)
-// Keyboard input will be directed to this part of the application
-func (m *model) FocusDetails() {
-	if m.Focus == FocusSearch {
-		m.Search.Blur()
-	}
-	m.Focus = FocusDetails
-	m.Keys.Focus = FocusDetails
-}
-
-func (m *model) FocusDebug() {
-	if m.Focus == FocusSearch {
-		m.Search.Blur()
-	}
-	m.Focus = FocusDebug
-	m.Keys.Focus = FocusDebug
 }
 
 func (m *model) UpdateSelectedEntry() {
@@ -173,7 +156,12 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			return m, nil
 		case key.Matches(msg, m.Keys.FocusDebug):
-			m.FocusDebug()
+			if m.Focus != FocusDebug {
+				m.SetFocus(FocusDebug)
+			} else {
+				m.SetFocus(m.PrevFocus)
+			}
+			return m, nil
 		}
 
 		// Focus Keybinds
@@ -183,10 +171,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			case key.Matches(msg, m.Keys.ExecuteSearch) && !(m.Search.Value() == ""):
 				return m, Collect(m.Search.Value())
 			case key.Matches(msg, m.Keys.FocusResultsFromSearch):
-				m.FocusResults()
+				m.SetFocus(FocusResults)
 				return m, nil
 			case key.Matches(msg, m.Keys.FocusDetailsFromSearch):
-				m.FocusDetails()
+				m.SetFocus(FocusDetails)
 				return m, nil
 			default:
 				m.Search, cmd = m.Search.Update(msg)
@@ -195,13 +183,13 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case FocusResults:
 			switch {
 			case key.Matches(msg, m.Keys.FocusDetails):
-				m.FocusDetails()
+				m.SetFocus(FocusDetails)
 			case key.Matches(msg, m.Keys.Quit):
 				return m, tea.Quit
 			case key.Matches(msg, m.Keys.FocusSearch):
-				m.FocusSearch()
+				m.SetFocus(FocusSearch)
 			case key.Matches(msg, m.Keys.FocusSearchAndClear):
-				m.FocusSearch()
+				m.SetFocus(FocusSearch)
 				m.Search.SetValue("")
 			case key.Matches(msg, m.Keys.Help):
 				m.ExpandHelp()
@@ -218,13 +206,13 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case FocusDetails:
 			switch {
 			case key.Matches(msg, m.Keys.FocusResults):
-				m.FocusResults()
+				m.SetFocus(FocusResults)
 			case key.Matches(msg, m.Keys.FocusSearch):
-				m.FocusSearch()
+				m.SetFocus(FocusSearch)
 			case key.Matches(msg, m.Keys.Quit):
 				return m, tea.Quit
 			case key.Matches(msg, m.Keys.FocusSearchAndClear):
-				m.FocusSearch()
+				m.SetFocus(FocusSearch)
 				m.Search.SetValue("")
 				// case key.Matches(msg, m.keys.OpenDocument):
 				// 	m.OpenSelected()
@@ -249,6 +237,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			case MetaTab:
 				return m, nil
 			}
+		case FocusDebug:
+			if key.Matches(msg, m.Keys.Quit) {
+				return m, tea.Quit
+			}
 		}
 
 	// Update on resize
@@ -261,12 +253,13 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	// catch query results
 	case CollectMsg:
 		m.Results.SetItems(msg.Results)
-		m.FocusResults()
+		m.SetFocus(FocusResults)
 	// catch snippets
 	case SnippetsMsg:
 		m.Err = msg.Err
 		if msg.Entry.Url == m.SelectedEntry.Url {
 			m.Results.SetItem(m.Results.Index(), msg.Entry)
+			m.SelectedEntry = msg.Entry
 		}
 	// get preferred doc applications
 	case DocViewerMsg:
@@ -282,18 +275,30 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m model) View() string {
 	if m.Focus == FocusDebug {
 		var s strings.Builder
-		s.WriteString(RenderDebugEntry("Error", m.Err.Error(), m.Err != nil))
+		s.WriteString(lipgloss.JoinHorizontal(0,
+			RenderDebugEntry("Selected Entry", m.SelectedEntry.DocTitle, false),
+			"\t",
+			RenderDebugEntry("Snippet Count", strconv.Itoa(len(m.SelectedEntry.Snippets)), false),
+			"\t",
+			RenderDebugEntry("Selected Snippet", strconv.Itoa(m.SelectedSnippet), false),
+			"\t",
+			RenderDebugEntry("Selected Tab", strconv.Itoa(m.SelectedTab), false),
+		))
+		s.WriteString("\n\n")
 
-		s.WriteString(RenderDebugEntry("SelectedSnippet", strconv.Itoa(m.SelectedSnippet), false))
+		s.WriteString(lipgloss.JoinHorizontal(0,
+			RenderDebugEntry("Focus", strconv.Itoa(m.Focus), false),
+			"\t",
+			RenderDebugEntry("Previous Focus", strconv.Itoa(m.PrevFocus), false),
+		))
+		s.WriteString("\n\n")
 
-		return "\n\nError: " + m.Err.Error()
+		s.WriteString(RenderDebugEntry("Document Viewers", fmt.Sprintf("%s", m.DocViewers), false))
 
+		return styles.Root.Render(s.String())
 	} else {
 
-		entry, ok := m.Results.SelectedItem().(recoll.Entry)
-		if !ok {
-			m.Err = errors.New("Wrong entry type")
-		}
+		entry, _ := m.Results.SelectedItem().(recoll.Entry)
 
 		// Details View
 		// Switch between MetaData View and Snippets View (might add Annotations eventually)

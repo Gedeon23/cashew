@@ -143,8 +143,8 @@ func NewGlobalKeyMap() GlobalKeyMap {
 			key.WithHelp("o", "open snippet"),
 		),
 		FocusDebug: key.NewBinding(
-			key.WithKeys("p"),
-			key.WithHelp("p", "open debug"),
+			key.WithKeys("!"),
+			key.WithHelp("!", "open debug"),
 		),
 	}
 }
