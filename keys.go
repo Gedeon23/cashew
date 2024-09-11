@@ -10,7 +10,6 @@ type GlobalKeyMap struct {
 	Quit                   key.Binding
 	Quit_ESC               key.Binding
 	Help                   key.Binding
-	Help_QM                key.Binding
 	ExecuteSearch          key.Binding
 	NextTab                key.Binding
 	NextEntry              key.Binding
@@ -25,12 +24,13 @@ type GlobalKeyMap struct {
 	NextSnippet            key.Binding
 	PrevSnippet            key.Binding
 	OpenSnippet            key.Binding
+	FocusDebug             key.Binding
 }
 
 func (k GlobalKeyMap) ShortHelp() []key.Binding {
 	switch k.Focus {
 	case FocusSearch:
-		return []key.Binding{k.Quit_ESC, k.Help_QM, k.FocusDetails, k.FocusResults}
+		return []key.Binding{k.Quit_ESC, k.Help, k.FocusDetails, k.FocusResults}
 	case FocusResults:
 		return []key.Binding{k.Quit, k.Help, k.NextEntry, k.PrevEntry, k.OpenDocument, k.FocusSearch}
 	case FocusDetails:
@@ -45,7 +45,7 @@ func (k GlobalKeyMap) FullHelp() [][]key.Binding {
 	case FocusSearch:
 		return [][]key.Binding{
 			{k.ExecuteSearch},
-			{k.Quit_ESC, k.Help_QM, k.FocusDetails, k.FocusResults},
+			{k.Quit_ESC, k.Help, k.FocusDetails, k.FocusResults},
 		}
 	case FocusResults:
 		return [][]key.Binding{
@@ -83,10 +83,6 @@ func NewGlobalKeyMap() GlobalKeyMap {
 			key.WithHelp("esc", "quit"),
 		),
 		Help: key.NewBinding(
-			key.WithKeys("?", "h"),
-			key.WithHelp("?/h", "help"),
-		),
-		Help_QM: key.NewBinding(
 			key.WithKeys("?"),
 			key.WithHelp("?", "help"),
 		),
@@ -145,6 +141,10 @@ func NewGlobalKeyMap() GlobalKeyMap {
 		OpenSnippet: key.NewBinding(
 			key.WithKeys("o"),
 			key.WithHelp("o", "open snippet"),
+		),
+		FocusDebug: key.NewBinding(
+			key.WithKeys("p"),
+			key.WithHelp("p", "open debug"),
 		),
 	}
 }

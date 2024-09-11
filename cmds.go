@@ -7,7 +7,9 @@ import (
 	"github.com/Gedeon23/cashew/recoll"
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
+	"log"
 	"os/exec"
+	"strings"
 )
 
 type CollectMsg struct {
@@ -60,5 +62,21 @@ func GetDocViewers() tea.Cmd {
 		}
 
 		return docViewers
+	}
+}
+
+type SnippetOpenedMsg struct {
+	Err error
+}
+
+func OpenSnippet(Entry recoll.Entry, SelectedSnippet int) tea.Cmd {
+	return func() tea.Msg {
+		cmd := exec.Command("zathura", "--page="+strings.TrimSpace(Entry.Snippets[SelectedSnippet].Page), Entry.Url)
+		if err := cmd.Start(); err != nil {
+			log.Printf("Error: %v", err)
+			return SnippetOpenedMsg{Err: err}
+		}
+
+		return SnippetOpenedMsg{}
 	}
 }

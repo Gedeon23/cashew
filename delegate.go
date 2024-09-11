@@ -151,3 +151,10 @@ func RenderSnippet(query string, focused bool, selected bool, index int, snippet
 		}
 	}
 }
+
+func RenderDebugEntry(name string, value string, critical bool) string {
+	if critical {
+		return styles.CriticalDebugEntryName.Render(name) + "\n" + styles.CriticalDebugEntryValue.Render(value) + "\n\n"
+	}
+	return styles.NormalDebugEntryName.Render(name) + "\n" + styles.NormalDebugEntryValue.Render(value) + "\n\n"
+}

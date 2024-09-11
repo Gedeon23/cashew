@@ -62,3 +62,18 @@ var NormalTab = lipgloss.NewStyle().
 var FocusedTab = lipgloss.NewStyle().
 	Bold(true).
 	Foreground(FocusedForeground)
+
+var NormalDebugEntryName = lipgloss.NewStyle().
+	Foreground(NormalForeground).
+	Bold(true)
+
+var NormalDebugEntryValue = lipgloss.NewStyle().
+	Foreground(NormalForeground)
+
+var CriticalDebugEntryName = lipgloss.NewStyle().
+	Foreground(lipgloss.Color("#FF0000")).
+	Bold(true)
+
+var CriticalDebugEntryValue = lipgloss.NewStyle().
+	Foreground(lipgloss.Color("#FF0000")).
+	Bold(true)
