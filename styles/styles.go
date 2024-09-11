@@ -49,8 +49,8 @@ var NormalSnippetAfterMatch = lipgloss.NewStyle().
 
 var SnippetMatch = lipgloss.NewStyle().
 	Bold(true).
-	Background(lipgloss.Color("#FF0000")).
-	Foreground(lipgloss.Color("#FFFFFF"))
+	Background(FocusedForeground).
+	Foreground(SelectedForeground)
 
 var SelectedTab = lipgloss.NewStyle().
 	Bold(true).
