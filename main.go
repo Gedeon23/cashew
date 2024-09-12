@@ -384,7 +384,7 @@ func main() {
 		defer f.Close()
 	}
 	p := tea.NewProgram(newModel(logging), tea.WithAltScreen())
-	if _, err := p.Run(); err != nil && logging {
+	if _, err := p.Run(); err != nil {
 		log.Fatal(err)
 	}
 }

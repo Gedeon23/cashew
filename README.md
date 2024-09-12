@@ -9,18 +9,21 @@ The goal of this project is to offer a keyboard driven UI for recoll and integra
 ## Current Features
 
 - Search recoll index
-- Display of Title (file name if no title is found in metadata) and Author
 - easy keyboard driven navigation
 - Detail View for each entry
 - easily open the entry in your preferred pdf viewer
 - Snippets View
 - Open pdf at snippet location (currently only supporting zathura)
 
+## Features Currently Working On
+
+- flags to integrate into bash script
+
 ## Planned Features
 
+- determine preferred document viewers
 - easily open possible source files (latex, typst) in your editor 
 - Surrounding Directory View
-- flags to integrate into bash script
 
 
 ## Installation
