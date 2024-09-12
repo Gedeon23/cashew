@@ -50,10 +50,11 @@ type model struct {
 }
 
 // Create Initial Model for Application
-func newModel(logging bool) model {
+func newModel(query string, logging bool) model {
 	search := textinput.New()
 	search.Placeholder = "search…"
 	search.Prompt = " "
+	search.SetValue(query)
 	search.Focus()
 	search.CharLimit = 200
 	search.Width = 20
@@ -131,7 +132,12 @@ func (m *model) OpenSelected() {
 }
 
 func (m model) Init() tea.Cmd {
-	return GetDocViewers()
+	var cmds []tea.Cmd
+	if m.Search.Value() != "" {
+		cmds = append(cmds, Collect(m.Search.Value()))
+	}
+	cmds = append(cmds, GetDocViewers())
+	return tea.Batch(cmds...)
 }
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -373,7 +379,9 @@ func (m model) View() string {
 
 func main() {
 	log_flag := flag.Bool("log", false, "turn on error logging, usage: --log=true, file: /tmp/cashew_debug.log, default: false")
+	search_flag := flag.String("search", "", "predefine search query, usage: --search='<query>'")
 	flag.Parse()
+	search := *search_flag
 	logging := *log_flag
 
 	if logging {
@@ -383,7 +391,7 @@ func main() {
 		}
 		defer f.Close()
 	}
-	p := tea.NewProgram(newModel(logging), tea.WithAltScreen())
+	p := tea.NewProgram(newModel(search, logging), tea.WithAltScreen())
 	if _, err := p.Run(); err != nil {
 		log.Fatal(err)
 	}
