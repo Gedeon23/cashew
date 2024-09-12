@@ -3,22 +3,25 @@ package main
 import (
 	"bufio"
 	"bytes"
-	"fmt"
 	"github.com/Gedeon23/cashew/recoll"
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
-	"log"
 	"os/exec"
 	"strings"
 )
 
 type CollectMsg struct {
 	Results []list.Item
+	Err     error
 }
 
 func Collect(term string) tea.Cmd {
 	return func() tea.Msg {
-		return CollectMsg{Results: recoll.Collect(term)}
+		results, err := recoll.Collect(term)
+		if err != nil {
+			return CollectMsg{Err: err}
+		}
+		return CollectMsg{Results: results}
 	}
 }
 
@@ -40,6 +43,7 @@ type SwitchEntryMsg struct {
 
 type DocViewerMsg struct {
 	Viewers map[string]string
+	Err     error
 }
 
 func GetDocViewers() tea.Cmd {
@@ -52,7 +56,9 @@ func GetDocViewers() tea.Cmd {
 
 			out, err := cmd.CombinedOutput()
 			if err != nil {
-				return fmt.Errorf("Error: could not determine user preferred doc viewers, %s, %s", err.Error(), out)
+				return DocViewerMsg{
+					Err: err,
+				}
 			}
 
 			scan := bufio.NewScanner(bytes.NewReader(out))
@@ -61,7 +67,9 @@ func GetDocViewers() tea.Cmd {
 			docViewers[docType] = scan.Text()
 		}
 
-		return docViewers
+		return DocViewerMsg{
+			Viewers: docViewers,
+		}
 	}
 }
 
@@ -73,7 +81,6 @@ func OpenSnippet(Entry recoll.Entry, SelectedSnippet int) tea.Cmd {
 	return func() tea.Msg {
 		cmd := exec.Command("zathura", "--page="+strings.TrimSpace(Entry.Snippets[SelectedSnippet].Page), Entry.Url)
 		if err := cmd.Start(); err != nil {
-			log.Printf("Error: %v", err)
 			return SnippetOpenedMsg{Err: err}
 		}
 

@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"encoding/base64"
 	"fmt"
-	"log"
 	"os/exec"
 	"path/filepath"
 	"strings"
@@ -13,20 +12,15 @@ import (
 	"github.com/charmbracelet/bubbles/list"
 )
 
-func Collect(term string) []list.Item {
-	// Example command
+func Collect(term string) ([]list.Item, error) {
 	cmd := exec.Command("recoll", "-t", "-F", "author title file url", term)
 
-	// Capture stdout and stderr
 	var out, errOut bytes.Buffer
 	cmd.Stdout = &out
 	cmd.Stderr = &errOut
 
-	// Run the command
 	if err := cmd.Run(); err != nil {
-		log.Fatalf("Error: %v\n", err)
-		log.Fatalf("Stderr: %s\n", errOut.String())
-		return nil
+		return nil, err
 	}
 
 	data := strings.Split(out.String(), "\n")
@@ -39,7 +33,7 @@ func Collect(term string) []list.Item {
 
 		url, err := base64.StdEncoding.DecodeString(fields[3])
 		if err != nil {
-			log.Fatalf("err: decoding url '%s', unknown url, this should never happen (%v)\n", fields[3], err)
+			return nil, fmt.Errorf("Error: decoding url '%s', unknown url, this should never happen (%v)\n", fields[3], err)
 		} else {
 			entry.Url = string(url)
 		}
@@ -71,8 +65,7 @@ func Collect(term string) []list.Item {
 		entries = append(entries, entry)
 	}
 
-	log.Printf("returned entries: %s", entries)
-	return entries
+	return entries, nil
 }
 
 func GetSnipptets(entry Entry, term string) (Entry, error) {
@@ -83,7 +76,6 @@ func GetSnipptets(entry Entry, term string) (Entry, error) {
 	if err != nil {
 		return entry, fmt.Errorf("Error in recoll query %s for snippets:\n %s\n %s", cmd.String(), err, out)
 	}
-	log.Printf("Getting Snippets for %s", entry)
 
 	scan := bufio.NewScanner(bytes.NewReader(out))
 	lineNumber := 0

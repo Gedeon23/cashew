@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"log"
 	"os/exec"
@@ -45,10 +46,11 @@ type model struct {
 	PrevFocus       int
 	SelectedSnippet int
 	Err             error
+	Logging         bool
 }
 
 // Create Initial Model for Application
-func newModel() model {
+func newModel(logging bool) model {
 	search := textinput.New()
 	search.Placeholder = "search…"
 	search.Prompt = " "
@@ -76,6 +78,8 @@ func newModel() model {
 		SelectedTab:     0,
 		Focus:           FocusSearch,
 		SelectedSnippet: 0,
+
+		Logging: logging,
 	}
 }
 
@@ -89,7 +93,6 @@ func (m *model) SetFocus(focus int) {
 		}
 		m.PrevFocus = m.Focus
 		m.Focus = focus
-		log.Printf("Set Focus %d", focus)
 		m.Keys.Focus = focus
 		if m.Focus == FocusSearch {
 			m.Search.Focus()
@@ -121,7 +124,7 @@ func (m *model) OpenSelected() {
 	if selected, ok := selected.(recoll.Entry); ok {
 		cmd := exec.Command("xdg-open", selected.Url)
 
-		if err := cmd.Start(); err != nil {
+		if err := cmd.Start(); err != nil && m.Logging {
 			log.Printf("Error: %v\n", err)
 		}
 	}
@@ -252,8 +255,15 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		)
 	// catch query results
 	case CollectMsg:
-		m.Results.SetItems(msg.Results)
-		m.SetFocus(FocusResults)
+		if msg.Err != nil {
+			m.Err = msg.Err
+			if m.Logging {
+				log.Printf("Error: getting recoll entries, %s", msg.Err)
+			}
+		} else {
+			m.Results.SetItems(msg.Results)
+			m.SetFocus(FocusResults)
+		}
 	// catch snippets
 	case SnippetsMsg:
 		m.Err = msg.Err
@@ -264,8 +274,19 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	// get preferred doc applications
 	case DocViewerMsg:
 		m.DocViewers = msg.Viewers
+		if msg.Err != nil {
+			m.Err = msg.Err
+			if m.Logging {
+				log.Printf("Error: determining preferred document viewers, %s", msg.Err)
+			}
+		}
 	case SnippetOpenedMsg:
-		m.Err = msg.Err
+		if msg.Err != nil {
+			m.Err = msg.Err
+			if m.Logging {
+				log.Printf("Error: opening snippet, %s", msg.Err)
+			}
+		}
 	}
 
 	return m, tea.Batch(cmds...)
@@ -294,6 +315,13 @@ func (m model) View() string {
 		s.WriteString("\n\n")
 
 		s.WriteString(RenderDebugEntry("Document Viewers", fmt.Sprintf("%s", m.DocViewers), false))
+		s.WriteString("\n\n")
+
+		if m.Logging {
+			s.WriteString(RenderDebugEntry("Logging", " ", false))
+		} else {
+			s.WriteString(RenderDebugEntry("Logging", " ", false))
+		}
 
 		return styles.Root.Render(s.String())
 	} else {
@@ -335,7 +363,6 @@ func (m model) View() string {
 				m.Search.View(),
 				"\n",
 				lipgloss.JoinHorizontal(0,
-					m.DocViewers["application/pdf"],
 					m.Results.View(),
 					details.String(),
 				),
@@ -345,13 +372,19 @@ func (m model) View() string {
 }
 
 func main() {
-	f, err := tea.LogToFile("/tmp/cashew_debug.log", "debug")
-	if err != nil {
-		log.Fatalf("err: %v", err)
+	log_flag := flag.Bool("log", false, "turn on error logging, usage: --log=true, file: /tmp/cashew_debug.log, default: false")
+	flag.Parse()
+	logging := *log_flag
+
+	if logging {
+		f, err := tea.LogToFile("/tmp/cashew_debug.log", "debug")
+		if err != nil {
+			log.Fatalf("err: %v", err)
+		}
+		defer f.Close()
 	}
-	defer f.Close()
-	p := tea.NewProgram(newModel(), tea.WithAltScreen())
-	if _, err := p.Run(); err != nil {
+	p := tea.NewProgram(newModel(logging), tea.WithAltScreen())
+	if _, err := p.Run(); err != nil && logging {
 		log.Fatal(err)
 	}
 }
