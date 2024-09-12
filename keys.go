@@ -25,6 +25,7 @@ type GlobalKeyMap struct {
 	PrevSnippet            key.Binding
 	OpenSnippet            key.Binding
 	FocusDebug             key.Binding
+	SelectEntry            key.Binding
 }
 
 func (k GlobalKeyMap) ShortHelp() []key.Binding {
@@ -145,6 +146,10 @@ func NewGlobalKeyMap() GlobalKeyMap {
 		FocusDebug: key.NewBinding(
 			key.WithKeys("!"),
 			key.WithHelp("!", "open debug"),
+		),
+		SelectEntry: key.NewBinding(
+			key.WithKeys("enter"),
+			key.WithHelp("Enter", "select entry"),
 		),
 	}
 }

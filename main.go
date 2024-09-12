@@ -160,7 +160,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.SelectedTab %= len(m.Tabs)
 			m.Keys.SelectedTab = m.SelectedTab
 			m.UpdateSelectedEntry()
-			if m.SelectedTab == SnippetsTab && len(m.SelectedEntry.Snippets) == 0 {
+			if m.SelectedTab == SnippetsTab && len(m.SelectedEntry.Snippets) == 0 && m.SelectedEntry.Url != "" {
 				return m, GetSnipptets(m.SelectedEntry, m.Search.Value())
 			}
 			return m, nil
@@ -204,6 +204,18 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.ExpandHelp()
 			case key.Matches(msg, m.Keys.OpenDocument):
 				m.OpenSelected()
+			// case key.Matches(msg, m.Keys.SelectEntry):
+			// 	var yml strings.Builder
+			// 	yml.WriteString("title: " + m.SelectedEntry.DocTitle + "\n")
+			// 	yml.WriteString("author: " + m.SelectedEntry.Author + "\n")
+			// 	yml.WriteString("file: " + m.SelectedEntry.File + "\n")
+			// 	yml.WriteString("url: " + m.SelectedEntry.Url + "\n")
+			// 	yml.WriteString("snippets: \n")
+			// 	for _, snip := range m.SelectedEntry.Snippets {
+			// 		yml.WriteString("\t- page: " + snip.Page + "\n\t- text: " + snip.Text)
+			// 	}
+			// 	fmt.Println(yml.String())
+			// 	return m, tea.Quit
 			default:
 				m.Results, cmd = m.Results.Update(msg)
 				cmds = append(cmds, cmd)
