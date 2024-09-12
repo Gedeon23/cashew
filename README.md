@@ -3,6 +3,8 @@
 **Cashew** (name not final) is a terminal user interface for [recoll](https://recoll.org).
 The goal of this project is to offer a keyboard driven UI for recoll and integrate well into workflows centered around the terminal.
 
+![basic usage](./media/cashew.gif)
+
 
 ## Current Features
 
