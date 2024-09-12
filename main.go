@@ -31,6 +31,8 @@ const (
 	SnippetsTab
 )
 
+var STDOUT string
+
 type model struct {
 	Search        textinput.Model
 	Results       list.Model
@@ -120,6 +122,26 @@ func (m *model) ExpandHelp() {
 	)
 }
 
+func (m *model) WriteEntryToSTDOUT(entry recoll.Entry) {
+	var yml strings.Builder
+	yml.WriteString("title: " + entry.DocTitle + "\n")
+	yml.WriteString("author: " + entry.Author + "\n")
+	yml.WriteString("file: " + entry.File + "\n")
+	yml.WriteString("url: " + entry.Url + "\n")
+	var err error
+	if len(entry.Snippets) == 0 {
+		entry, err = recoll.GetSnipptets(entry, entry.Query)
+		if err != nil {
+			log.Printf("Error %s", err)
+		}
+	}
+	yml.WriteString("snippets: \n")
+	for _, snip := range entry.Snippets {
+		yml.WriteString("  - page: " + snip.Page + "\n    text: " + snip.Text + "\n")
+	}
+	STDOUT = yml.String()
+}
+
 func (m *model) OpenSelected() {
 	selected := m.Results.SelectedItem()
 	if selected, ok := selected.(recoll.Entry); ok {
@@ -204,18 +226,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.ExpandHelp()
 			case key.Matches(msg, m.Keys.OpenDocument):
 				m.OpenSelected()
-			// case key.Matches(msg, m.Keys.SelectEntry):
-			// 	var yml strings.Builder
-			// 	yml.WriteString("title: " + m.SelectedEntry.DocTitle + "\n")
-			// 	yml.WriteString("author: " + m.SelectedEntry.Author + "\n")
-			// 	yml.WriteString("file: " + m.SelectedEntry.File + "\n")
-			// 	yml.WriteString("url: " + m.SelectedEntry.Url + "\n")
-			// 	yml.WriteString("snippets: \n")
-			// 	for _, snip := range m.SelectedEntry.Snippets {
-			// 		yml.WriteString("\t- page: " + snip.Page + "\n\t- text: " + snip.Text)
-			// 	}
-			// 	fmt.Println(yml.String())
-			// 	return m, tea.Quit
+			case key.Matches(msg, m.Keys.SelectEntry):
+				m.WriteEntryToSTDOUT(m.SelectedEntry)
+				return m, tea.Quit
 			default:
 				m.Results, cmd = m.Results.Update(msg)
 				cmds = append(cmds, cmd)
@@ -235,11 +248,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			case key.Matches(msg, m.Keys.FocusSearchAndClear):
 				m.SetFocus(FocusSearch)
 				m.Search.SetValue("")
-				// case key.Matches(msg, m.keys.OpenDocument):
-				// 	m.OpenSelected()
-				// default:
-				// 	m.details, cmd = m.details.Update(msg)
-				// 	cmds = append(cmds, cmd)
 			}
 			switch m.SelectedTab {
 			case SnippetsTab:
@@ -280,6 +288,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		} else {
 			m.Results.SetItems(msg.Results)
+			m.UpdateSelectedEntry()
 			m.SetFocus(FocusResults)
 		}
 	// catch snippets
@@ -406,5 +415,9 @@ func main() {
 	p := tea.NewProgram(newModel(search, logging), tea.WithAltScreen())
 	if _, err := p.Run(); err != nil {
 		log.Fatal(err)
+	}
+
+	if STDOUT != "" {
+		fmt.Printf(STDOUT)
 	}
 }
