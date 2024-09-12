@@ -37,6 +37,9 @@ func (d EntryDelegate) Render(w io.Writer, m list.Model, index int, entry list.I
 		if entry.File[len(entry.File)-3:] == "pdf" {
 			icon = " "
 		}
+		if entry.File[len(entry.File)-3:] == "csv" {
+			icon = " "
+		}
 		title := icon + entry.DocTitle
 		if len(title) > (m.Width() - 3) {
 			title = title[:m.Width()-4] + "…"

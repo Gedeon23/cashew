@@ -14,11 +14,13 @@ type Snippet struct {
 func (s Snippet) FilterValue() string { return s.Text }
 
 type Entry struct {
-	Author   string
-	DocTitle string
-	File     string
-	Url      string
-	Query    string
+	Author    string
+	DocTitle  string
+	File      string
+	Url       string
+	MType     string
+	Relevancy string
+	Query     string
 
 	Snippets []Snippet
 }
@@ -39,6 +41,8 @@ func (m Entry) View() string {
 	s.WriteString(styles.EntryField.Render("Author") + "\t" + m.Author + "\n\n")
 	s.WriteString(styles.EntryField.Render(" File ") + "\t" + m.File + "\n\n")
 	s.WriteString(styles.EntryField.Render(" Url  ") + "\t" + m.Url + "\n\n")
+	s.WriteString(styles.EntryField.Render(" MType") + "\t" + m.MType + "\n\n")
+	s.WriteString(styles.EntryField.Render("     ") + "\t" + m.Relevancy + "\n\n")
 
 	return s.String()
 }

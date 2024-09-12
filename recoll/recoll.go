@@ -13,7 +13,7 @@ import (
 )
 
 func Collect(term string) ([]list.Item, error) {
-	cmd := exec.Command("recoll", "-t", "-F", "author title file url", term)
+	cmd := exec.Command("recoll", "-t", "-F", "author title file url mtype relevancyrating", term)
 
 	var out, errOut bytes.Buffer
 	cmd.Stdout = &out
@@ -58,6 +58,19 @@ func Collect(term string) ([]list.Item, error) {
 			entry.DocTitle = entry.File
 		} else {
 			entry.DocTitle = string(title)
+		}
+
+		mtype, err := base64.StdEncoding.DecodeString(fields[4])
+		if err != nil || string(mtype) == "" {
+			entry.MType = "application/pdf"
+		} else {
+			entry.MType = string(mtype)
+		}
+		relevancy, err := base64.StdEncoding.DecodeString(fields[5])
+		if err != nil || string(relevancy) == "" {
+			entry.Relevancy = "?%"
+		} else {
+			entry.Relevancy = string(relevancy)
 		}
 
 		entry.Snippets = make([]Snippet, 0, 10)
