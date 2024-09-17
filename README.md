@@ -48,6 +48,19 @@ go build .
 
 Right now the only requirement is recoll itself. I might add features in the future which are not accessible within the recoll cli.
 
+
+### Flags
+
+`cashew -h`
+```bash
+Usage of cashew:
+  -log
+    	turn on error logging, usage: --log=true, file: /tmp/cashew_debug.log, default: false
+  -search string
+    	predefine search query, usage: --search='<query>'
+```
+
+
 ---
 
 ## Credits
